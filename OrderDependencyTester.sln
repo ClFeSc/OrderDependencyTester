@@ -4,6 +4,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DependencyTester", "Depende
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CliFrontend", "CliFrontend\CliFrontend.csproj", "{D183BCCA-92BA-4762-BFBB-84D04C5462E2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrderDependencyModels", "OrderDependencyModels\OrderDependencyModels.csproj", "{7917E1D5-1564-4294-8320-29DE096736E1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +20,9 @@ Global
 		{D183BCCA-92BA-4762-BFBB-84D04C5462E2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D183BCCA-92BA-4762-BFBB-84D04C5462E2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D183BCCA-92BA-4762-BFBB-84D04C5462E2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7917E1D5-1564-4294-8320-29DE096736E1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7917E1D5-1564-4294-8320-29DE096736E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7917E1D5-1564-4294-8320-29DE096736E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7917E1D5-1564-4294-8320-29DE096736E1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
