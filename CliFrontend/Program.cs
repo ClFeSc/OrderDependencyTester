@@ -1,4 +1,4 @@
 ﻿using OrderDependencyModels;
 
-List<ListBasedOrderDependency> knownDependencies = SetBasedParser.parseSetBased(args[0]);
-List<ListBasedOrderDependency> testDependencies = ListBasedParser.parseListBased(args[1]);
+var knownDependencies = ISetBasedOrderDependency.Parse(args[0]);
+var testDependencies = ListBasedOrderDependency.Parse(args[1]);
