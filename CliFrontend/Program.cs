@@ -1,3 +1,13 @@
-﻿// See https://aka.ms/new-console-template for more information
+﻿namespace CliFrontend;
 
-Console.WriteLine("Hello, World!");
+using Utils;
+using OrderDependencyModels;
+
+class CliFrontend
+{
+    static void Main(string[] args)
+    {
+        List<ListBasedOrderDependency> knownDependencies = parseSetBased(args[0]);
+        List<ListBasedOrderDependency> testDependencies = ListBasedParser.parseListBased(args[1]);
+    }
+}
