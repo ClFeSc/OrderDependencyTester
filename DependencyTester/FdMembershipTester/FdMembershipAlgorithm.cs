@@ -11,18 +11,25 @@ public static class FdMembershipAlgorithm
         public required int RequiredAttributes { get; set; }
     }
 
-    public static bool IsValid(FunctionalDependency fdUnderTest, IEnumerable<FunctionalDependency> groundTruth, IEnumerable<Attribute> allAttributes)
+    //This can be used to check multiple FDs efficiently under the condition that the lhs of the i+1th FD is contained in the lhs of the ith FD
+    //If earlyReturnAttribute is set, the algorithm will return true from all FDs onward that determine it.
+    public static bool[] AreValid(IEnumerable<FunctionalDependency> fdsUnderTest, IEnumerable<FunctionalDependency> groundTruth, IEnumerable<Attribute> allAttributes, Attribute? earlyReturnAttribute = null)
     {
-        var reachableDependandts = fdUnderTest.Lhs;
+        var reachableDependandts = new HashSet<Attribute>();
+        var numFds = fdsUnderTest.Count();
         var fdsPerAttribute = new Dictionary<Attribute, List<AnnotatedFd>>(allAttributes.Select((attribute) =>
             new KeyValuePair<Attribute, List<AnnotatedFd>>(attribute, new List<AnnotatedFd>())));
-        var remainingAttributes = new Queue<Attribute>(fdUnderTest.Lhs);
+        var remainingAttributes = new Queue<Attribute>();
 
         var annotatedGroundTruth = groundTruth.Select((fd) => new AnnotatedFd
         {
             Fd = fd,
             RequiredAttributes = fd.Lhs.Count,
         });
+
+        var result = new bool[numFds];
+        for (var i = 0; i < result.Length; i++) result[i] = false;
+
         foreach (var fd in annotatedGroundTruth)
         {
             foreach (var attribute in fd.Fd.Lhs)
@@ -30,26 +37,47 @@ public static class FdMembershipAlgorithm
                 fdsPerAttribute[attribute].Add(fd);
             }
         }
-
-        while (remainingAttributes.TryDequeue(out var attribute))
+        var fdIndex = 0;
+        foreach (var fd in fdsUnderTest)
         {
-            foreach (var g in fdsPerAttribute[attribute])
             {
-                g.RequiredAttributes--;
-                if (g.RequiredAttributes == 0)
+                fdIndex++;
+                reachableDependandts.UnionWith(fd.Lhs);
+                var newToBeChecked = new HashSet<Attribute>(fd.Lhs);
+                newToBeChecked.ExceptWith(reachableDependandts);
+                foreach (var newAttribute in newToBeChecked)
                 {
-                    foreach (var dependentAttribute in g.Fd.Rhs)
+                    remainingAttributes.Enqueue(newAttribute);
+                }
+                while (remainingAttributes.TryDequeue(out var attribute))
+                {
+                    foreach (var g in fdsPerAttribute[attribute])
                     {
-                        if (!reachableDependandts.Contains(dependentAttribute))
+                        g.RequiredAttributes--;
+                        if (g.RequiredAttributes == 0)
                         {
-                            reachableDependandts.Add(dependentAttribute);
-                            remainingAttributes.Enqueue(dependentAttribute);
+                            foreach (var dependentAttribute in g.Fd.Rhs)
+                            {
+                                if (!reachableDependandts.Contains(dependentAttribute))
+                                {
+                                    if (earlyReturnAttribute is not null && earlyReturnAttribute == dependentAttribute)
+                                        return result.Select((_, index) => index >= fdIndex ? true : result[index]).ToArray();
+                                    reachableDependandts.Add(dependentAttribute);
+                                    remainingAttributes.Enqueue(dependentAttribute);
+                                }
+                            }
                         }
                     }
                 }
+                result[fdIndex] = fd.Rhs.All(reachableDependandts.Contains);
             }
         }
 
-        return fdUnderTest.Rhs.All((attribute) => reachableDependandts.Contains(attribute));
+        return result;
+    }
+
+    public static bool IsValid(FunctionalDependency fdUnderTest, IEnumerable<FunctionalDependency> groundTruth, IEnumerable<Attribute> allAttributes)
+    {
+        return AreValid(new[] { fdUnderTest }, groundTruth, allAttributes)[0];
     }
 }

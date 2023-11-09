@@ -21,6 +21,7 @@ var fdUnderTest = new FunctionalDependency(new HashSet<Attribute>(attributes[0].
 
 var isValid = FdMembershipAlgorithm.IsValid(fdUnderTest, fds, attributes);
 
+// TODO: add example for ListBasedOdAlgorithm
 Console.WriteLine(isValid);
 
 file static class Utils
