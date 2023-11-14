@@ -13,10 +13,11 @@ public static class FdMembershipAlgorithm
 
     //This can be used to check multiple FDs efficiently under the condition that the lhs of the i+1th FD is contained in the lhs of the ith FD
     //If earlyReturnAttribute is set, the algorithm will return true from all FDs onward that determine it.
-    public static bool[] AreValid(IEnumerable<FunctionalDependency> fdsUnderTest, IEnumerable<FunctionalDependency> groundTruth, IEnumerable<Attribute> allAttributes, Attribute? earlyReturnAttribute = null)
+    public static Dictionary<FunctionalDependency, bool> AreValid(ICollection<FunctionalDependency> fdsUnderTest,
+        IEnumerable<FunctionalDependency> groundTruth, IEnumerable<Attribute> allAttributes,
+        Attribute? earlyReturnAttribute = null)
     {
         var reachableDependandts = new HashSet<Attribute>();
-        var numFds = fdsUnderTest.Count();
         var fdsPerAttribute = new Dictionary<Attribute, List<AnnotatedFd>>(allAttributes.Select((attribute) =>
             new KeyValuePair<Attribute, List<AnnotatedFd>>(attribute, new List<AnnotatedFd>())));
         var remainingAttributes = new Queue<Attribute>();
@@ -27,8 +28,9 @@ public static class FdMembershipAlgorithm
             RequiredAttributes = fd.Lhs.Count,
         });
 
-        var result = new bool[numFds];
-        for (var i = 0; i < result.Length; i++) result[i] = false;
+        var result =
+            new Dictionary<FunctionalDependency, bool>(fdsUnderTest.Select(fd =>
+                new KeyValuePair<FunctionalDependency, bool>(fd, false)));
 
         foreach (var fd in annotatedGroundTruth)
         {
@@ -37,39 +39,43 @@ public static class FdMembershipAlgorithm
                 fdsPerAttribute[attribute].Add(fd);
             }
         }
+
         var fdIndex = 0;
         foreach (var fd in fdsUnderTest)
         {
             {
                 fdIndex++;
-                reachableDependandts.UnionWith(fd.Lhs);
                 var newToBeChecked = new HashSet<Attribute>(fd.Lhs);
                 newToBeChecked.ExceptWith(reachableDependandts);
+                reachableDependandts.UnionWith(fd.Lhs);
                 foreach (var newAttribute in newToBeChecked)
                 {
                     remainingAttributes.Enqueue(newAttribute);
                 }
+
                 while (remainingAttributes.TryDequeue(out var attribute))
                 {
                     foreach (var g in fdsPerAttribute[attribute])
                     {
                         g.RequiredAttributes--;
-                        if (g.RequiredAttributes == 0)
+                        if (g.RequiredAttributes != 0) continue;
+                        foreach (var dependentAttribute in g.Fd.Rhs)
                         {
-                            foreach (var dependentAttribute in g.Fd.Rhs)
-                            {
-                                if (!reachableDependandts.Contains(dependentAttribute))
+                            if (reachableDependandts.Contains(dependentAttribute)) continue;
+                            if (earlyReturnAttribute == dependentAttribute)
+                                return new Dictionary<FunctionalDependency, bool>(result.Select((pair, idx) =>
                                 {
-                                    if (earlyReturnAttribute is not null && earlyReturnAttribute == dependentAttribute)
-                                        return result.Select((_, index) => index >= fdIndex ? true : result[index]).ToArray();
-                                    reachableDependandts.Add(dependentAttribute);
-                                    remainingAttributes.Enqueue(dependentAttribute);
-                                }
-                            }
+                                    var isValid = idx >= fdIndex || pair.Value;
+                                    return new KeyValuePair<FunctionalDependency, bool>(pair.Key, isValid);
+                                }));
+                            // return result.Select((value, index) => index >= fdIndex || value.Value);
+                            reachableDependandts.Add(dependentAttribute);
+                            remainingAttributes.Enqueue(dependentAttribute);
                         }
                     }
                 }
-                result[fdIndex] = fd.Rhs.All(reachableDependandts.Contains);
+
+                result[fd] = fd.Rhs.All(reachableDependandts.Contains);
             }
         }
 
@@ -78,6 +84,6 @@ public static class FdMembershipAlgorithm
 
     public static bool IsValid(FunctionalDependency fdUnderTest, IEnumerable<FunctionalDependency> groundTruth, IEnumerable<Attribute> allAttributes)
     {
-        return AreValid(new[] { fdUnderTest }, groundTruth, allAttributes)[0];
+        return AreValid(new[] { fdUnderTest }, groundTruth, allAttributes).Single().Value;
     }
 }
