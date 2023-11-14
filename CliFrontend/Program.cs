@@ -24,10 +24,12 @@ foreach (var compatibleOd in knownDependencies.startingCompOds)
 var attributes = File.ReadAllLines(args[2]).Where(line => !string.IsNullOrWhiteSpace(line))
     .Select(line => new Attribute(line)).ToList();
 
+var algo = new ListBasedOdAlgorithm(knownDependencies.startingCods,
+        compatiblesTree, attributes);
+
 foreach (var dependencyToTest in testDependencies)
 {
-    var isValid = ListBasedOdAlgorithm.IsValid(dependencyToTest, knownDependencies.startingCods,
-        compatiblesTree, attributes);
+    var isValid = algo.IsValid(dependencyToTest);
     Console.WriteLine($"OD {dependencyToTest} is {(isValid ? "" : "not ")}valid");
 }
 
