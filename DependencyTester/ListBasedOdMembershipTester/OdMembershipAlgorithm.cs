@@ -8,8 +8,7 @@ namespace DependencyTester.OdMembershipTester;
 
 public static class ListBasedOdAlgorithm
 {
-
-    public static bool SplitsExist(ListBasedOrderDependency odUnderTest, IEnumerable<ConstantOrderDependency> constants, IEnumerable<Attribute> allAttributes)
+    private static bool SplitsExist(ListBasedOrderDependency odUnderTest, IEnumerable<ConstantOrderDependency> constants, IEnumerable<Attribute> allAttributes)
     {
         var fds = constants.Select(cOD => FunctionalDependency.FromConstantOrderDependency(cOD));
         var fd = new FunctionalDependency(
@@ -18,7 +17,7 @@ public static class ListBasedOdAlgorithm
         return !FdMembershipAlgorithm.IsValid(fd, fds, allAttributes);
     }
 
-    public static bool SwapsExist(ListBasedOrderDependency odUnderTest, IEnumerable<ConstantOrderDependency> constants, ICollection<OrderCompatibleDependency> compatibles, ICollection<Attribute> allAttributes)
+    private static bool SwapsExist(ListBasedOrderDependency odUnderTest, IEnumerable<ConstantOrderDependency> constants, ICollection<OrderCompatibleDependency> compatibles, ICollection<Attribute> allAttributes)
     {
         // TODO: add comment
         var knownFds = constants.Select(cOD => FunctionalDependency.FromConstantOrderDependency(cOD)).ToList();
