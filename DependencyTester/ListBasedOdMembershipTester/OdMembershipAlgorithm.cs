@@ -17,7 +17,7 @@ public static class ListBasedOdAlgorithm
         return !FdMembershipAlgorithm.IsValid(fd, fds, allAttributes);
     }
 
-    private static bool SwapsExist(ListBasedOrderDependency odUnderTest, IEnumerable<ConstantOrderDependency> constants, ICollection<OrderCompatibleDependency> compatibles, ICollection<Attribute> allAttributes)
+    private static bool SwapsExist(ListBasedOrderDependency odUnderTest, IEnumerable<ConstantOrderDependency> constants, ColumnsTree<HashSet<OrderCompatibleDependency>> compatibles, ICollection<Attribute> allAttributes)
     {
         // TODO: add comment
         var knownFds = constants.Select(cOD => FunctionalDependency.FromConstantOrderDependency(cOD)).ToList();
@@ -64,7 +64,7 @@ public static class ListBasedOdAlgorithm
         return false;
     }
 
-    private static bool IsValid(OrderCompatibleDependency odCandidate, IEnumerable<OrderCompatibleDependency> compatibles)
+    private static bool IsValid(OrderCompatibleDependency odCandidate, ColumnsTree<HashSet<OrderCompatibleDependency>> compatibles)
     {
         // 1. Check if LHS == RHS.
         if (odCandidate.Distinct().Count() == 1)
@@ -77,18 +77,19 @@ public static class ListBasedOdAlgorithm
             return true;
         }
         // 3. Check if there is a subset of the Context that is known to be valid.
-        var hasSupersetByAugmentation = (OrderCompatibleDependency orderCompatibleDependency) => compatibles.Any(other =>
-            orderCompatibleDependency.All(os => other.Contains(os)) &&
-            other.Context.IsSubsetOf(orderCompatibleDependency.Context));
+        var hasSupersetByAugmentation = (OrderCompatibleDependency orderCompatibleDependency) => compatibles
+            .GetSubsets(orderCompatibleDependency.Context).Any(set => set.Any(other =>
+            orderCompatibleDependency.All(os => other.Contains(os)))
+            );
         return hasSupersetByAugmentation(odCandidate) ||
                // 4. Check if 3. holds for reversed directions.
                hasSupersetByAugmentation(odCandidate.Reverse());
     }
-    public static bool IsValid(ListBasedOrderDependency odUnderTest, ICollection<ConstantOrderDependency> constants, ICollection<OrderCompatibleDependency> compatibles, ICollection<Attribute> allAttributes)
+    public static bool IsValid(ListBasedOrderDependency odUnderTest, ICollection<ConstantOrderDependency> constants, ColumnsTree<HashSet<OrderCompatibleDependency>> compatiblesTree, ICollection<Attribute> allAttributes)
     {
         // map the constants to fds
         if (SplitsExist(odUnderTest, constants, allAttributes))
             return false;
-        return !SwapsExist(odUnderTest, constants, compatibles, allAttributes);
+        return !SwapsExist(odUnderTest, constants, compatiblesTree, allAttributes);
     }
 }

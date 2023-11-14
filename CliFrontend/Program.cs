@@ -1,4 +1,5 @@
-﻿using DependencyTester.OdMembershipTester;
+﻿using DependencyTester;
+using DependencyTester.OdMembershipTester;
 using OrderDependencyModels;
 using Attribute = OrderDependencyModels.Attribute;
 
@@ -11,13 +12,22 @@ if (args.Length != 3)
 
 var knownDependencies = ISetBasedOrderDependency.Parse(args[0]);
 var testDependencies = ListBasedOrderDependency.Parse(args[1]);
+
+
+var compatiblesTree = new ColumnsTree<HashSet<OrderCompatibleDependency>>();
+foreach (var compatibleOd in knownDependencies.startingCompOds)
+{
+    var set = compatiblesTree.Get(compatibleOd.Context) ?? new HashSet<OrderCompatibleDependency>();
+    set.Add(compatibleOd);
+    compatiblesTree.Add(set, compatibleOd.Context);
+}
 var attributes = File.ReadAllLines(args[2]).Where(line => !string.IsNullOrWhiteSpace(line))
     .Select(line => new Attribute(line)).ToList();
 
 foreach (var dependencyToTest in testDependencies)
 {
     var isValid = ListBasedOdAlgorithm.IsValid(dependencyToTest, knownDependencies.startingCods,
-        knownDependencies.startingCompOds, attributes);
+        compatiblesTree, attributes);
     Console.WriteLine($"OD {dependencyToTest} is {(isValid ? "" : "not ")}valid");
 }
 
