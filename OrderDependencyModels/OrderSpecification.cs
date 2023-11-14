@@ -23,4 +23,9 @@ public readonly partial record struct OrderSpecification(Attribute Attribute, Or
 
     [GeneratedRegex("(.*)(↑|↓)?")]
     private static partial Regex OrderSpecRegex();
+
+    public OrderSpecification Reverse() => this with
+    {
+        Direction = Direction is OrderDirection.Ascending ? OrderDirection.Descending : OrderDirection.Ascending,
+    };
 }
