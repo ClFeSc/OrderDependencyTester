@@ -1,11 +1,21 @@
+using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 
 namespace OrderDependencyModels;
 
-public readonly partial record struct OrderCompatibleDependency(HashSet<Attribute> Context, OrderSpecification LeftHandSide,
-    OrderSpecification RightHandSide) : ISetBasedOrderDependency
+public readonly partial record struct OrderCompatibleDependency : IEnumerable<OrderSpecification>, ISetBasedOrderDependency
 {
+    public required HashSet<Attribute> Context { get; init; }
+    private readonly HashSet<OrderSpecification> _sides;
+    public required IEnumerable<OrderSpecification> Sides
+    {
+        init { _sides = new HashSet<OrderSpecification>(value);
+            if (_sides.Count is > 2 or <= 0)
+                throw new ArgumentException($"Supported Counts are 1 and 2, got {_sides.Count}.");
+        }
+    }
+
     public static bool TryParse(string spec, [NotNullWhen(true)] out OrderCompatibleDependency? orderCompatibleDependency)
     {
         // parse line in format {D, F, H, I}: B↑ ~ E↓ as a OrderCompatibleDependency
@@ -19,10 +29,23 @@ public readonly partial record struct OrderCompatibleDependency(HashSet<Attribut
         var context = match.Groups[1].Value.Split(", ").Select(x => new Attribute(x));
         var lhs = OrderSpecification.Parse(match.Groups[2].Value);
         var rhs = OrderSpecification.Parse(match.Groups[3].Value);
-        orderCompatibleDependency = new OrderCompatibleDependency(new HashSet<Attribute>(context), lhs, rhs);
+        orderCompatibleDependency = new OrderCompatibleDependency
+        {
+            Context = new HashSet<Attribute>(context),
+            Sides = new[] { lhs, rhs },
+        };
         return true;
     }
 
     [GeneratedRegex("{(.+)}: (.+) ~ (.+)")]
     private static partial Regex OrderCompatibleRegex();
+
+    public OrderCompatibleDependency Reverse() => this with
+    {
+        Sides = _sides.Select(os => os.Reverse()),
+    };
+
+    public IEnumerator<OrderSpecification> GetEnumerator() => _sides.GetEnumerator();
+
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }
