@@ -30,7 +30,7 @@ public readonly partial record struct OrderSpecification
         };
     }
 
-    [GeneratedRegex("(.*)(↑|↓)?")]
+    [GeneratedRegex("([^↑↓]*)(↑|↓)?")]
     private static partial Regex OrderSpecRegex();
 
     public OrderSpecification Reverse() => this with
