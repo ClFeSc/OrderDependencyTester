@@ -8,10 +8,10 @@ public readonly record struct FunctionalDependency
     public required HashSet<Attribute> Rhs { get; init; }
 
     [SetsRequiredMembers]
-    public FunctionalDependency(HashSet<Attribute> determinant, HashSet<Attribute> dependent)
+    public FunctionalDependency(HashSet<Attribute> lhs, HashSet<Attribute> rhs)
     {
-        Lhs = determinant;
-        Rhs = dependent;
+        Lhs = lhs;
+        Rhs = rhs;
     }
 
     [SetsRequiredMembers]
@@ -21,7 +21,7 @@ public readonly record struct FunctionalDependency
         Rhs = new HashSet<Attribute> {rhs};
     }
 
-    public static FunctionalDependency FromConstantOrderDependency(in ConstantOrderDependency od) => new()
+    public static FunctionalDependency FromConstantOrderDependency(ConstantOrderDependency od) => new()
     {
         Lhs = od.Context,
         Rhs = new HashSet<Attribute> {od.RightHandSide}

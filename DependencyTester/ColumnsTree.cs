@@ -3,48 +3,53 @@ using Attribute = OrderDependencyModels.Attribute;
 namespace DependencyTester;
 
 // Source: https://github.com/SchweizerischeBundesbahnen/BCNFStar/blob/main/frontend/src/model/schema/ColumnsTree.ts
+/// <summary>
+/// A prefix tree for sets of <see cref="Attribute">Attributes</see>.
+/// </summary>
+/// <typeparam name="T"></typeparam>
 public class ColumnsTree<T>
 {
-    private Dictionary<Attribute, ColumnsTree<T>> _children = new();
+    private readonly Dictionary<Attribute, ColumnsTree<T>> _children = new();
     private T? _content;
-    
-    /** Helper to cleanup sort functions*/
-    private static int SortResult(string a, string b)
-    {
-        return StringComparer.InvariantCulture.Compare(a, b);
-    }
 
-    /** Helper to sort an array of columns. The sorted array is used to have an
-    * unambiguous path through the tree. Should check for all fields referenced in Column.equals
-        */
+    /// <summary>
+    /// Helper to cleanup sort functions.
+    /// </summary>
+    private static int SortResult(string a, string b) => StringComparer.InvariantCulture.Compare(a, b);
+
+    /// <summary>
+    /// Helper to sort an array of columns. The sorted array is used to have an
+    /// unambiguous path through the tree. Should check for all fields referenced in Column.equals
+    /// </summary>
     private static int CompareColumns(Attribute c1, Attribute c2) => SortResult(c1.Name, c2.Name);
 
-    /**
-   * @returns Columns sorted to be a path along the tree
-   */
-    private static Attribute[] SortedColumns(HashSet<Attribute> cc)
+    /// <returns>
+    /// Columns sorted to be a path along the tree.
+    /// </returns>
+    private static IEnumerable<Attribute> SortedColumns(IEnumerable<Attribute> cc)
     {
         var sorted = cc.ToArray();
         Array.Sort(sorted, CompareColumns);
         return sorted;
     }
 
-    /**
-   * Adds a value to the tree
-   * @param content the value to be set
-   * @param columns the location to store the value at
-   */
-    public void Add(T content, HashSet<Attribute> columns)
+    /// <summary>
+    /// Adds a value to the tree.
+    ///
+    /// <param name="content">The value to be set.</param>
+    /// <param name="columns">The location to store the values at.</param>
+    /// </summary>
+    public void Add(T content, IEnumerable<Attribute> columns)
     {
         Traverse(columns)._content = content;
     }
 
-    /**
-   * @returns the value stored at `columns`, or undefined if nothing is there
-   */
-    public T? Get(HashSet<Attribute> columns) => Traverse(columns)._content;
+    /// <returns>
+    /// The value stored at <paramref name="columns"/>, or `null` if nothing is there.
+    /// </returns>
+    public T? Get(IEnumerable<Attribute> columns) => Traverse(columns)._content;
 
-    private ColumnsTree<T> Traverse(HashSet<Attribute> columns)
+    private ColumnsTree<T> Traverse(IEnumerable<Attribute> columns)
     {
         var current = this;
         foreach (var column in SortedColumns(columns))
@@ -63,9 +68,9 @@ public class ColumnsTree<T>
         return entries;
     }
 
-    /**
-   * @returns all values stored in the tree for a subset of the given `columns`
-   */
+    /// <returns>
+    /// All values stored in the tree for a subset of the given <paramref name="columns"/>.
+    /// </returns>
     public List<T> GetSubsets(HashSet<Attribute> columns)
     {
         var result = SortedEntries().SelectMany<KeyValuePair<Attribute, ColumnsTree<T>>, T>(pair =>
@@ -81,13 +86,15 @@ public class ColumnsTree<T>
         return result;
     }
 
-    /**
-   * @returns a ColumnsTree containing only values stored at a subset of `columns`
-   */
-    private ColumnsTree<T> GetSubtree(HashSet<Attribute> columns)
+    /// <returns>
+    /// A ColumnsTree containing only values stored at a subset of <paramref name="columns"/>.
+    /// </returns>
+    private ColumnsTree<T> GetSubtree(IReadOnlySet<Attribute> columns)
     {
-        var newTree = new ColumnsTree<T>();
-        newTree._content = _content;
+        var newTree = new ColumnsTree<T>
+        {
+            _content = _content
+        };
         foreach (var (column, subtree) in SortedEntries())
         {
             if (!columns.Contains(column)) continue;
@@ -99,7 +106,9 @@ public class ColumnsTree<T>
         return newTree;
     }
 
-    /** returns all values stored in this tree */
+    /// <returns>
+    /// All values stored in this tree.
+    /// </returns>
     public List<T> GetAll()
     {
         var result = SortedEntries().SelectMany(pair => pair.Value.GetAll()).ToList();

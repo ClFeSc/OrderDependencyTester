@@ -2,8 +2,13 @@ using System.Text.RegularExpressions;
 
 namespace OrderDependencyModels;
 
-public readonly partial record struct OrderSpecification(Attribute Attribute, OrderDirection Direction)
+public readonly partial record struct OrderSpecification
 {
+    public required Attribute Attribute { get; init; }
+    public required OrderDirection Direction { get; init; }
+
+    public override string ToString() => $"{Attribute}{OrderDirectionHelper.ToString(Direction)}";
+
     public static OrderSpecification Parse(string spec)
     {
         var match = OrderSpecRegex().Match(spec);
@@ -18,7 +23,11 @@ public readonly partial record struct OrderSpecification(Attribute Attribute, Or
             "↓" => OrderDirection.Descending,
             _ => OrderDirection.Ascending
         };
-        return new OrderSpecification(attribute, direction);
+        return new OrderSpecification
+        {
+            Attribute = attribute,
+            Direction = direction
+        };
     }
 
     [GeneratedRegex("(.*)(↑|↓)?")]
