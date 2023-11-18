@@ -6,6 +6,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CliFrontend", "CliFrontend\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrderDependencyModels", "OrderDependencyModels\OrderDependencyModels.csproj", "{7917E1D5-1564-4294-8320-29DE096736E1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DependencyTesterTest", "DependencyTesterTest\DependencyTesterTest.csproj", "{824DDA0E-3D34-44A3-97C0-3E8F019F9974}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +26,9 @@ Global
 		{7917E1D5-1564-4294-8320-29DE096736E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7917E1D5-1564-4294-8320-29DE096736E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7917E1D5-1564-4294-8320-29DE096736E1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{824DDA0E-3D34-44A3-97C0-3E8F019F9974}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{824DDA0E-3D34-44A3-97C0-3E8F019F9974}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{824DDA0E-3D34-44A3-97C0-3E8F019F9974}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{824DDA0E-3D34-44A3-97C0-3E8F019F9974}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

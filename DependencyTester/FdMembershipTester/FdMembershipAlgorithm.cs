@@ -11,9 +11,15 @@ public static class FdMembershipAlgorithm
         public required int RequiredAttributes { get; set; }
     }
 
-    //This can be used to check multiple FDs efficiently under the condition that the lhs of the i+1th FD is contained in the lhs of the ith FD
-    //If earlyReturnAttribute is set, the algorithm will return true from all FDs onward that determine it.
-    public static Dictionary<FunctionalDependency, bool> AreValid(ICollection<FunctionalDependency> fdsUnderTest,
+    /// <summary>
+    /// Check whether multiple FDs are valid.
+    /// </summary>
+    /// <param name="fdsUnderTest">The FDs to check for validity given the <see cref="groundTruth"/>. <b>Note</b>: The LHS of the (i+1)-th FD <b>MUST</b> be a superset of the i-th FD!</param>
+    /// <param name="groundTruth">The given FDs that are known to hold.</param>
+    /// <param name="allAttributes">All the attributes present in the relation for which the FDs are defined.</param>
+    /// <param name="earlyReturnAttribute">If present, and it is reachable as a RHS while testing the i-th FD, this one and all following FDs will be assumed to hold.</param>
+    /// <returns>A mapping from each FD from <see cref="fdsUnderTest"/> to whether they hold given the <see cref="groundTruth"/>.</returns>
+    public static Dictionary<FunctionalDependency, bool> AreValid(IList<FunctionalDependency> fdsUnderTest,
         IEnumerable<FunctionalDependency> groundTruth, IEnumerable<Attribute> allAttributes,
         Attribute? earlyReturnAttribute = null)
     {
@@ -40,7 +46,7 @@ public static class FdMembershipAlgorithm
             }
         }
 
-        var fdIndex = 0;
+        var fdIndex = -1;
         foreach (var fd in fdsUnderTest)
         {
             {
