@@ -55,7 +55,7 @@ public readonly partial record struct OrderCompatibleDependency : IEnumerable<Or
         return true;
     }
 
-    [GeneratedRegex("{(.+)}: (.+) ~ (.+)")]
+    [GeneratedRegex("{(.*)}: (.+) ~ (.+)")] 
     private static partial Regex OrderCompatibleRegex();
 
     public OrderCompatibleDependency Reverse() => this with

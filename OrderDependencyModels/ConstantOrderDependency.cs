@@ -30,6 +30,6 @@ public readonly partial record struct ConstantOrderDependency : ISetBasedOrderDe
         return true;
     }
 
-    [GeneratedRegex("{(.+)}: \\[\\] ↦ (.+)")]
+    [GeneratedRegex("{(.*)}: \\[\\] ↦ (.+)")]
     private static partial Regex ConstantOdRegex();
 }

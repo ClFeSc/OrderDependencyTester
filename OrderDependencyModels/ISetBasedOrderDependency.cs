@@ -15,9 +15,12 @@ public interface ISetBasedOrderDependency : IOrderDependency
                 startingConstOds.Add(constantOrderDependency.Value);
                 continue;
             }
-            if (OrderCompatibleDependency.TryParse(line, out var orderCompatibleDependency))
+            else if (OrderCompatibleDependency.TryParse(line, out var orderCompatibleDependency))
             {
                 startingCompOds.Add(orderCompatibleDependency.Value);
+            }
+            else if (!string.IsNullOrWhiteSpace(line)) {
+                throw new FormatException($"OD String not recognized: {line}");
             }
         }
 
