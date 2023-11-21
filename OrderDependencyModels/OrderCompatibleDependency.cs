@@ -8,12 +8,29 @@ public readonly partial record struct OrderCompatibleDependency : IEnumerable<Or
 {
     public required HashSet<Attribute> Context { get; init; }
     private readonly HashSet<OrderSpecification> _sides;
-    public required IEnumerable<OrderSpecification> Sides
+    public required OrderSpecification Lhs
     {
-        init { _sides = new HashSet<OrderSpecification>(value);
-            if (_sides.Count is > 2 or <= 0)
-                throw new ArgumentException($"Supported Counts are 1 and 2, got {_sides.Count}.");
-        }
+        init => _sides.Add(value);
+    }
+    public required OrderSpecification Rhs
+    {
+        init => _sides.Add(value);
+    }
+
+    private IEnumerable<OrderSpecification> Sides
+    {
+        init => _sides = new HashSet<OrderSpecification>(value);
+    }
+
+    public OrderCompatibleDependency()
+    {
+        _sides = new HashSet<OrderSpecification>(2);
+    }
+
+    public override string ToString()
+    {
+        var sides = _sides.ToList();
+        return $"{{{string.Join(", ", Context)}}}: {sides[0]} ~ {sides[1]}";
     }
 
     public static bool TryParse(string spec, [NotNullWhen(true)] out OrderCompatibleDependency? orderCompatibleDependency)
@@ -32,7 +49,8 @@ public readonly partial record struct OrderCompatibleDependency : IEnumerable<Or
         orderCompatibleDependency = new OrderCompatibleDependency
         {
             Context = new HashSet<Attribute>(context),
-            Sides = new[] { lhs, rhs },
+            Lhs = lhs,
+            Rhs = rhs,
         };
         return true;
     }

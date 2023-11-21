@@ -4,8 +4,8 @@ public interface ISetBasedOrderDependency : IOrderDependency
 {
     public static (List<ConstantOrderDependency> startingCods, List<OrderCompatibleDependency> startingCompOds) Parse(string fileName)
     {
-        var startingConstOds = new List<ConstantOrderDependency> { };
-        var startingCompOds = new List<OrderCompatibleDependency> { };
+        var startingConstOds = new List<ConstantOrderDependency>();
+        var startingCompOds = new List<OrderCompatibleDependency>();
 
         // read each line of input.txt
         foreach (var line in File.ReadLines(fileName))
