@@ -98,10 +98,14 @@ public class ListBasedOdAlgorithm
                 );
     }
 
-    public bool IsValid(ListBasedOrderDependency odUnderTest)
+    private bool IsValid(ListBasedOrderDependency odUnderTest)
     {
         if (SplitsExist(odUnderTest))
             return false;
         return !SwapsExist(odUnderTest);
     }
+
+    public IEnumerable<KeyValuePair<ListBasedOrderDependency, bool>>
+        AreValid(IEnumerable<ListBasedOrderDependency> odsUnderTest) =>
+        odsUnderTest.Select(od => new KeyValuePair<ListBasedOrderDependency, bool>(od, IsValid(od)));
 }
