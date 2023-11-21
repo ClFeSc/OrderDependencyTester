@@ -1,7 +1,11 @@
-﻿using DependencyTester;
-using DependencyTester.ListBasedOdMembershipTester;
-using OrderDependencyModels;
-using Attribute = OrderDependencyModels.Attribute;
+﻿using CliFrontend;
+
+// args = new[]
+// {
+//     "/home/clemens/Dokumente/HPI/WiSe_2023-2024/Advanced_Data_Profiling/nextcloud/WiSe 2023-2024 Advanced Data Profiling/Example DISTOD Results/horse-sub-results.txt",
+//     "/home/clemens/Dokumente/HPI/WiSe_2023-2024/Advanced_Data_Profiling/code/OrderDependencyTester/testdata/Horse-300-27/valid_all.unique.txt",
+//     "/home/clemens/Dokumente/HPI/WiSe_2023-2024/Advanced_Data_Profiling/code/OrderDependencyTester/testdata/Horse-300-27/attributes.txt"
+// };
 
 if (args.Length != 3)
 {
@@ -10,30 +14,8 @@ if (args.Length != 3)
     return 1;
 }
 
-var knownDependencies = ISetBasedOrderDependency.Parse(args[0]);
-var testDependencies = ListBasedOrderDependency.Parse(args[1]);
-
-
-var compatiblesTree = new ColumnsTree<HashSet<OrderCompatibleDependency>>();
-foreach (var compatibleOd in knownDependencies.startingCompOds)
+foreach (var (dependencyToTest, isValid) in TestExecutor.TestDependencies(args[0], args[1], args[2]))
 {
-    var set = compatiblesTree.Get(compatibleOd.Context) ?? new HashSet<OrderCompatibleDependency>();
-    set.Add(compatibleOd);
-    compatiblesTree.Add(set, compatibleOd.Context);
-}
-var attributes = File.ReadAllLines(args[2]).Where(line => !string.IsNullOrWhiteSpace(line))
-    .Select(line => new Attribute(line)).ToList();
-
-var algo = new ListBasedOdAlgorithm
-{
-    Constants = knownDependencies.startingCods,
-    AllAttributes = attributes,
-    CompatiblesTree = compatiblesTree
-};
-
-foreach (var dependencyToTest in testDependencies)
-{
-    var isValid = algo.IsValid(dependencyToTest);
     Console.WriteLine($"OD {dependencyToTest} is {(isValid ? "" : "not ")}valid");
 }
 
