@@ -7,7 +7,7 @@ public readonly partial record struct ListBasedOrderDependency : IListBasedOrder
     public required List<OrderSpecification> LeftHandSide { get; init; }
     public required List<OrderSpecification> RightHandSide { get; init; }
 
-    public override string ToString() => $"{string.Join(", ", LeftHandSide)} -> {string.Join(", ", RightHandSide)}";
+    public override string ToString() => $"[{string.Join(",", LeftHandSide)}] -> [{string.Join(",", RightHandSide)}]";
 
     public static List<ListBasedOrderDependency> Parse(string filename)
     {
