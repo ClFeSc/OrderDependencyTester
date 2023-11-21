@@ -23,6 +23,7 @@
 
 
     <ItemGroup>
+      <ProjectReference Include="..\CliFrontend\CliFrontend.csproj" />
       <ProjectReference Include="..\DependencyTester\DependencyTester.csproj" />
       <ProjectReference Include="..\OrderDependencyModels\OrderDependencyModels.csproj" />
     </ItemGroup>

@@ -13,6 +13,11 @@ public static class TestExecutor
         var knownDependencies = ISetBasedOrderDependency.Parse(setBasedPath);
         var testDependencies = ListBasedOrderDependency.Parse(listBasedPath);
 
+        if (testDependencies.Count == 0)
+        {
+            Console.Error.WriteLine($"Warning: No ODs are being tested. Check your input data.");
+        }
+
 
         var compatiblesTree = new ColumnsTree<HashSet<OrderCompatibleDependency>>();
         foreach (var compatibleOd in knownDependencies.startingCompOds)
