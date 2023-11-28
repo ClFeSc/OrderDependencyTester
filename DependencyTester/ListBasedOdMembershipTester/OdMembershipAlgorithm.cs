@@ -10,19 +10,22 @@ public class ListBasedOdAlgorithm
     public required ColumnsTree<HashSet<OrderCompatibleDependency>> CompatiblesTree { private get; init; }
     public required ICollection<Attribute> AllAttributes { private get; init; }
 
+    private FunctionalDependency[]? _constantFds;
+
+    private FunctionalDependency[] ConstantFds =>
+        _constantFds ??= Constants.Select(FunctionalDependency.FromConstantOrderDependency).ToArray();
+
 
     private bool SplitsExist(ListBasedOrderDependency odUnderTest)
     {
-        var fds = Constants.Select(FunctionalDependency.FromConstantOrderDependency);
         var fd = new FunctionalDependency(
             new HashSet<Attribute>(odUnderTest.LeftHandSide.Select(orderSpec => orderSpec.Attribute)),
             new HashSet<Attribute>(odUnderTest.RightHandSide.Select(orderSpec => orderSpec.Attribute)));
-        return !FdMembershipAlgorithm.IsValid(fd, fds, AllAttributes);
+        return !FdMembershipAlgorithm.IsValid(fd, ConstantFds, AllAttributes);
     }
 
     private bool SwapsExist(ListBasedOrderDependency odUnderTest)
     {
-        var knownFds = Constants.Select(FunctionalDependency.FromConstantOrderDependency).ToArray();
         // This context is formed from the RHS of the list-based OD.
         // In the inner loop, the LHS attributes are added independently.
         var contextFromRight = new HashSet<Attribute>();
@@ -54,7 +57,7 @@ public class ListBasedOdAlgorithm
                 fdsToTest.Add(fdToTest);
                 context.Add(leftAttribute);
             }
-            var areProvenValid = FdMembershipAlgorithm.AreValid(fdsToTest, knownFds, AllAttributes, rightAttribute);
+            var areProvenValid = FdMembershipAlgorithm.AreValid(fdsToTest, ConstantFds, AllAttributes, rightAttribute);
             foreach (var (fd, isValid) in areProvenValid)
             {
                 if (isValid) continue;

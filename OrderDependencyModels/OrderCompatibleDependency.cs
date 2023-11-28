@@ -43,19 +43,24 @@ public readonly partial record struct OrderCompatibleDependency : IEnumerable<Or
             return false;
         }
 
-        var context = match.Groups[1].Value.Split(", ").Where(x=>!string.IsNullOrWhiteSpace(x)).Select(x => new Attribute(x));
+        var splitted = match.Groups[1].Value.Split(", ");
+        var context = new HashSet<Attribute>(splitted.Length);
+        foreach (var attribute in splitted.Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => new Attribute(x)))
+        {
+            context.Add(attribute);
+        }
         var lhs = OrderSpecification.Parse(match.Groups[2].Value);
         var rhs = OrderSpecification.Parse(match.Groups[3].Value);
         orderCompatibleDependency = new OrderCompatibleDependency
         {
-            Context = new HashSet<Attribute>(context),
+            Context = context,
             Lhs = lhs,
             Rhs = rhs,
         };
         return true;
     }
 
-    [GeneratedRegex("{(.*)}: (.+) ~ (.+)")] 
+    [GeneratedRegex("{(.*?)}: (.+?) ~ (.+)")] 
     private static partial Regex OrderCompatibleRegex();
 
     public OrderCompatibleDependency Reverse() => this with
