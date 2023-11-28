@@ -20,7 +20,7 @@ public readonly partial record struct ConstantOrderDependency : ISetBasedOrderDe
             return false;
         }
 
-        var context = match.Groups[1].Value.Split(", ").Select(x => new Attribute(x));
+        var context = match.Groups[1].Value.Split(", ").Where(x=>!string.IsNullOrWhiteSpace(x)).Select(x => new Attribute(x));
         var rhs = new Attribute(match.Groups[2].Value);
         constantOrderDependency = new ConstantOrderDependency
         {
