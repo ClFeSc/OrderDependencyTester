@@ -1,5 +1,3 @@
-using System.Text.RegularExpressions;
-
 namespace OrderDependencyModels;
 
 public readonly partial record struct OrderSpecification
@@ -11,16 +9,19 @@ public readonly partial record struct OrderSpecification
 
     public static OrderSpecification Parse(string spec)
     {
-        var match = OrderSpecRegex().Match(spec);
-        if (!match.Success)
-        {
-            throw new Exception("Invalid order specification");
-        }
 
-        var attribute = new Attribute(match.Groups[1].Value);
-        var direction = match.Groups[2].Value switch
+        var lastChar = spec.Last();
+
+        var attribute = new Attribute(lastChar switch
         {
-            "↓" => OrderDirection.Descending,
+            '↓' => spec.Remove(spec.Length - 1),
+            '↑' => spec.Remove(spec.Length - 1),
+            _ => spec
+        });
+        
+        var direction = lastChar switch
+        {
+            '↓' => OrderDirection.Descending,
             _ => OrderDirection.Ascending
         };
         return new OrderSpecification
@@ -29,9 +30,6 @@ public readonly partial record struct OrderSpecification
             Direction = direction
         };
     }
-
-    [GeneratedRegex("([^↑↓]*)(↑|↓)?")]
-    private static partial Regex OrderSpecRegex();
 
     public OrderSpecification Reverse() => this with
     {
