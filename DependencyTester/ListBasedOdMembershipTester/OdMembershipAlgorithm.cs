@@ -118,9 +118,9 @@ public class ListBasedOdAlgorithm
 
     private bool IsValid(ListBasedOrderDependency odUnderTest)
     {
-        if (SplitsExist(odUnderTest))
+        if (SwapsExist(odUnderTest))
             return false;
-        return !SwapsExist(odUnderTest);
+        return !SplitsExist(odUnderTest);
     }
 
     public IEnumerable<KeyValuePair<ListBasedOrderDependency, bool>>
