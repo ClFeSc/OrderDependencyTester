@@ -85,7 +85,7 @@ public class FdMembershipAlgorithmTest
     [MemberData(nameof(ToTestForIsValid))]
     private void TestIsValid(FdToTest fdToTest)
     {
-        var isValid = FdMembershipAlgorithm.IsValid(fdToTest.FunctionalDependency, GroundTruth, 6);
+        var isValid = new FdMembershipAlgorithm(GroundTruth,6).IsValid(fdToTest.FunctionalDependency);
         Assert.Equal(fdToTest.ShouldBeValid, isValid);
     }
 
@@ -93,8 +93,7 @@ public class FdMembershipAlgorithmTest
     [MemberData(nameof(ToTestForAreValid))]
     private void TestAreValidWithoutEarlyReturn(List<FdToTest> fdsToTest)
     {
-        var areValid = FdMembershipAlgorithm.AreValid(fdsToTest.Select(fd => fd.FunctionalDependency).ToArray(),
-            GroundTruth, 6);
+        var areValid = new FdMembershipAlgorithm(GroundTruth,6).AreValid(fdsToTest.Select(fd => fd.FunctionalDependency).ToArray());
 
         foreach (var fd in fdsToTest)
         {
@@ -106,8 +105,8 @@ public class FdMembershipAlgorithmTest
     [MemberData(nameof(ToTestForAreValidWithEarlyReturn))]
     private void TestAreValidWithEarlyReturn(FdsToTestWithEarlyReturn fdsToTest)
     {
-        var areValid = FdMembershipAlgorithm.AreValid(
-            fdsToTest.FdsToTest.Select(fd => fd.FunctionalDependency).ToArray(), GroundTruth, 6,
+        var areValid = new FdMembershipAlgorithm(GroundTruth,6).AreValid(
+            fdsToTest.FdsToTest.Select(fd => fd.FunctionalDependency).ToArray(),
             fdsToTest.EarlyReturnAttribute);
 
         foreach (var fd in fdsToTest.FdsToTest)

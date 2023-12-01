@@ -1,3 +1,4 @@
+using System.Reflection.Metadata;
 using System.Runtime.InteropServices;
 using DependencyTester.FdMembershipTester;
 using OrderDependencyModels;
@@ -6,14 +7,17 @@ namespace DependencyTester.ListBasedOdMembershipTester;
 
 public class ListBasedOdAlgorithm
 {
-    public required ICollection<ConstantOrderDependency> Constants { private get; init; }
-    public required ColumnsTree<HashSet<OrderCompatibleDependency>> CompatiblesTree { private get; init; }
-    public required int NumAttributes;
+    private ICollection<ConstantOrderDependency> _constants;
+    private ColumnsTree<HashSet<OrderCompatibleDependency>> _compatiblesTree;
 
-    private FunctionalDependency[]? _constantFds;
 
-    private FunctionalDependency[] ConstantFds =>
-        _constantFds ??= Constants.Select(FunctionalDependency.FromConstantOrderDependency).ToArray();
+    public ListBasedOdAlgorithm(ICollection<ConstantOrderDependency> Constants, ColumnsTree<HashSet<OrderCompatibleDependency>> CompatiblesTree, int NumAttributes){
+        _constants = Constants;
+        _compatiblesTree = CompatiblesTree;
+        _fdAlgo = new FdMembershipAlgorithm(Constants.Select(FunctionalDependency.FromConstantOrderDependency).ToArray(),NumAttributes);
+    }
+
+    private FdMembershipAlgorithm _fdAlgo;
 
 
     private bool SplitsExist(ListBasedOrderDependency odUnderTest)
@@ -21,7 +25,7 @@ public class ListBasedOdAlgorithm
         var fd = new FunctionalDependency(
             new HashSet<int>(odUnderTest.LeftHandSide.Select(orderSpec => orderSpec.Attribute)),
             new HashSet<int>(odUnderTest.RightHandSide.Select(orderSpec => orderSpec.Attribute)));
-        return !FdMembershipAlgorithm.IsValid(fd, ConstantFds, NumAttributes);
+        return !_fdAlgo.IsValid(fd);
     }
 
     private bool SwapsExist(ListBasedOrderDependency odUnderTest)
@@ -67,7 +71,7 @@ public class ListBasedOdAlgorithm
 
             if (fdsToTest.Count == 0) continue;
 
-            var areProvenValid = FdMembershipAlgorithm.AreValid(fdsToTest, ConstantFds, NumAttributes, rightAttribute);
+            var areProvenValid = _fdAlgo.AreValid(fdsToTest, rightAttribute);
             foreach (var (fd, isValid) in areProvenValid)
             {
                 if (!isValid) return true;
@@ -106,7 +110,7 @@ public class ListBasedOdAlgorithm
                HasSupersetByAugmentation(odCandidate.Reverse());
 
         bool HasSupersetByAugmentation(OrderCompatibleDependency orderCompatibleDependency) =>
-            CompatiblesTree.GetSubsets(orderCompatibleDependency.Context)
+            _compatiblesTree.GetSubsets(orderCompatibleDependency.Context)
                 .Any(set => set.Any(other => orderCompatibleDependency
                     .All(os => other.Contains(os)))
                 );
