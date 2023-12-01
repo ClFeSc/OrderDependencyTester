@@ -42,31 +42,38 @@ public class ListBasedOdAlgorithm
             foreach (var leftOrderSpec in odUnderTest.LeftHandSide)
             {
                 var leftAttribute = leftOrderSpec.Attribute;
-                var fdToTest = new FunctionalDependency
-                {
-                    Lhs = new HashSet<Attribute>(context),
-                    Rhs = new HashSet<Attribute> {leftAttribute}
-                };
+
                 var correspondingOd = new OrderCompatibleDependency
                 {
-                    Context = fdToTest.Lhs,
+                    Context = new HashSet<Attribute>(context),
                     Lhs = leftOrderSpec,
                     Rhs = rightOrderSpec
                 };
-                fdToOd.Add(fdToTest, correspondingOd);
-                fdsToTest.Add(fdToTest);
+                if (!IsValid(correspondingOd))
+                {
+                    var fdToTest = new FunctionalDependency
+                    {
+                        Lhs = correspondingOd.Context,
+                        Rhs = new HashSet<Attribute> { leftAttribute }
+                    };
+                    fdToOd.Add(fdToTest, correspondingOd);
+                    fdsToTest.Add(fdToTest);
+                }
+
+
                 context.Add(leftAttribute);
             }
             var areProvenValid = FdMembershipAlgorithm.AreValid(fdsToTest, ConstantFds, AllAttributes, rightAttribute);
             foreach (var (fd, isValid) in areProvenValid)
             {
-                if (isValid) continue;
+                if (!isValid) return true;
+                // if (isValid) continue;
                 // run actual set-based OD algorithm on this
                 // Note: When collecting ODs from more than one iteration of the RHS loop, make sure to copy the right order spec.
-                var odToTest = fdToOd[fd];
-                var isNowValid = IsValid(odToTest);
+                // var odToTest = fdToOd[fd];
+                // var isNowValid = IsValid(odToTest);
                 // There is no way this OD still holds. Since all ODs have to hold, there exists a Swap somewhere.
-                if (!isNowValid) return true;
+                // if (!isNowValid) return true;
             }
             contextFromRight.Add(rightAttribute);
         }
