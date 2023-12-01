@@ -6,7 +6,7 @@ namespace OrderDependencyModels;
 
 public readonly partial record struct OrderCompatibleDependency : IEnumerable<OrderSpecification>, ISetBasedOrderDependency
 {
-    public required HashSet<Attribute> Context { get; init; }
+    public required HashSet<int> Context { get; init; }
     private readonly HashSet<OrderSpecification> _sides;
     public required OrderSpecification Lhs
     {
@@ -33,7 +33,7 @@ public readonly partial record struct OrderCompatibleDependency : IEnumerable<Or
         return $"{{{string.Join(", ", Context)}}}: {sides[0]} ~ {sides[1]}";
     }
 
-    public static bool TryParse(string spec, [NotNullWhen(true)] out OrderCompatibleDependency? orderCompatibleDependency)
+    public static bool TryParse(Dictionary<string,int> attributesMap, string spec, [NotNullWhen(true)] out OrderCompatibleDependency? orderCompatibleDependency)
     {
         // parse line in format {D, F, H, I}: B↑ ~ E↓ as a OrderCompatibleDependency
         var match = OrderCompatibleRegex().Match(spec);
@@ -44,13 +44,13 @@ public readonly partial record struct OrderCompatibleDependency : IEnumerable<Or
         }
 
         var splitted = match.Groups[1].Value.Split(", ");
-        var context = new HashSet<Attribute>(splitted.Length);
-        foreach (var attribute in splitted.Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => new Attribute(x)))
+        var context = new HashSet<int>(splitted.Length);
+        foreach (var attribute in splitted.Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => attributesMap[x]))
         {
             context.Add(attribute);
         }
-        var lhs = OrderSpecification.Parse(match.Groups[2].Value);
-        var rhs = OrderSpecification.Parse(match.Groups[3].Value);
+        var lhs = OrderSpecification.Parse(attributesMap,match.Groups[2].Value);
+        var rhs = OrderSpecification.Parse(attributesMap,match.Groups[3].Value);
         orderCompatibleDependency = new OrderCompatibleDependency
         {
             Context = context,

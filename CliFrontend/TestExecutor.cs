@@ -1,7 +1,6 @@
 using DependencyTester;
 using DependencyTester.ListBasedOdMembershipTester;
 using OrderDependencyModels;
-using Attribute = OrderDependencyModels.Attribute;
 
 namespace CliFrontend;
 
@@ -10,18 +9,27 @@ public static class TestExecutor
     public static IEnumerable<KeyValuePair<ListBasedOrderDependency, bool>> TestDependencies(string setBasedPath, string listBasedPath,
         string attributesPath)
     {
-        var knownDependencies = ISetBasedOrderDependency.Parse(setBasedPath);
-        var testDependencies = ListBasedOrderDependency.Parse(listBasedPath);
+
+        var attributes = File.ReadAllLines(attributesPath).Where(line => !string.IsNullOrWhiteSpace(line))
+            .ToList();
+
+        var attributesMap = new Dictionary<string, int>(attributes.Count);
+        var attributeIndex = 0;
+        foreach (var attribute in attributes)
+        {
+            attributesMap[attribute] = attributeIndex++;
+        }
+
+        var knownDependencies = ISetBasedOrderDependency.Parse(attributesMap,setBasedPath);
+        var testDependencies = ListBasedOrderDependency.Parse(attributesMap,listBasedPath);
 
         if (testDependencies.Count == 0)
         {
             Console.Error.WriteLine($"Warning: No ODs are being tested. Check your input data.");
         }
 
-        var attributes = File.ReadAllLines(attributesPath).Where(line => !string.IsNullOrWhiteSpace(line))
-            .Select(line => new Attribute(line)).ToList();
 
-        var compatiblesTree = new ColumnsTree<HashSet<OrderCompatibleDependency>>(attributes);
+        var compatiblesTree = new ColumnsTree<HashSet<OrderCompatibleDependency>>(attributes.Count);
         foreach (var compatibleOd in knownDependencies.startingCompOds)
         {
             var set = compatiblesTree.Get(compatibleOd.Context) ?? new HashSet<OrderCompatibleDependency>();
@@ -32,7 +40,7 @@ public static class TestExecutor
         var algo = new ListBasedOdAlgorithm
         {
             Constants = knownDependencies.startingCods,
-            AllAttributes = attributes,
+            NumAttributes = attributes.Count,
             CompatiblesTree = compatiblesTree
         };
 

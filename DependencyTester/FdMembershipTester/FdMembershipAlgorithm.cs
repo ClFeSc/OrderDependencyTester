@@ -1,5 +1,4 @@
 using OrderDependencyModels;
-using Attribute = OrderDependencyModels.Attribute;
 
 namespace DependencyTester.FdMembershipTester;
 
@@ -20,18 +19,18 @@ public static class FdMembershipAlgorithm
     /// <param name="earlyReturnAttribute">If present, and it is reachable as a RHS while testing the i-th FD, this one and all following FDs will be assumed to hold.</param>
     /// <returns>A mapping from each FD from <see cref="fdsUnderTest"/> to whether they hold given the <see cref="groundTruth"/>.</returns>
     public static Dictionary<FunctionalDependency, bool> AreValid(IList<FunctionalDependency> fdsUnderTest,
-        ICollection<FunctionalDependency> groundTruth, ICollection<Attribute> allAttributes,
-        Attribute? earlyReturnAttribute = null)
+        ICollection<FunctionalDependency> groundTruth, int numAttributes,
+        int? earlyReturnAttribute = null)
     {
-        var reachableDependants = new HashSet<Attribute>();
-        var fdsPerAttribute = new Dictionary<Attribute, List<AnnotatedFd>>(allAttributes.Count);
-        foreach (var attribute in allAttributes)
+        var reachableDependants = new HashSet<int>();
+        var fdsPerAttribute = new Dictionary<int, List<AnnotatedFd>>(numAttributes);
+        for (int i = 0; i < numAttributes; i++)
         {
-            fdsPerAttribute.Add(attribute, new List<AnnotatedFd>(groundTruth.Count));
+            fdsPerAttribute.Add(i, new List<AnnotatedFd>(groundTruth.Count));
         }
         // var fdsPerAttribute = new Dictionary<Attribute, List<AnnotatedFd>>(allAttributes.Select(attribute =>
         //     new KeyValuePair<Attribute, List<AnnotatedFd>>(attribute, new List<AnnotatedFd>(groundTruth.Count()))));
-        var remainingAttributes = new Queue<Attribute>();
+        var remainingAttributes = new Queue<int>();
 
         var annotatedGroundTruth = groundTruth.Select((fd) => new AnnotatedFd
         {
@@ -87,8 +86,8 @@ public static class FdMembershipAlgorithm
         return result;
     }
 
-    public static bool IsValid(FunctionalDependency fdUnderTest, ICollection<FunctionalDependency> groundTruth, ICollection<Attribute> allAttributes)
+    public static bool IsValid(FunctionalDependency fdUnderTest, ICollection<FunctionalDependency> groundTruth, int numAttributes)
     {
-        return AreValid(new[] { fdUnderTest }, groundTruth, allAttributes).Single().Value;
+        return AreValid(new[] { fdUnderTest }, groundTruth, numAttributes).Single().Value;
     }
 }

@@ -1,6 +1,5 @@
 using DependencyTester.FdMembershipTester;
 using OrderDependencyModels;
-using Attribute = OrderDependencyModels.Attribute;
 
 namespace DependencyTester.ListBasedOdMembershipTester;
 
@@ -8,7 +7,7 @@ public class ListBasedOdAlgorithm
 {
     public required ICollection<ConstantOrderDependency> Constants { private get; init; }
     public required ColumnsTree<HashSet<OrderCompatibleDependency>> CompatiblesTree { private get; init; }
-    public required ICollection<Attribute> AllAttributes { private get; init; }
+    public required int NumAttributes;
 
     private FunctionalDependency[]? _constantFds;
 
@@ -19,22 +18,22 @@ public class ListBasedOdAlgorithm
     private bool SplitsExist(ListBasedOrderDependency odUnderTest)
     {
         var fd = new FunctionalDependency(
-            new HashSet<Attribute>(odUnderTest.LeftHandSide.Select(orderSpec => orderSpec.Attribute)),
-            new HashSet<Attribute>(odUnderTest.RightHandSide.Select(orderSpec => orderSpec.Attribute)));
-        return !FdMembershipAlgorithm.IsValid(fd, ConstantFds, AllAttributes);
+            new HashSet<int>(odUnderTest.LeftHandSide.Select(orderSpec => orderSpec.Attribute)),
+            new HashSet<int>(odUnderTest.RightHandSide.Select(orderSpec => orderSpec.Attribute)));
+        return !FdMembershipAlgorithm.IsValid(fd, ConstantFds, NumAttributes);
     }
 
     private bool SwapsExist(ListBasedOrderDependency odUnderTest)
     {
         // This context is formed from the RHS of the list-based OD.
         // In the inner loop, the LHS attributes are added independently.
-        var contextFromRight = new HashSet<Attribute>();
+        var contextFromRight = new HashSet<int>();
 
         foreach (var rightOrderSpec in odUnderTest.RightHandSide)
         {
             var rightAttribute = rightOrderSpec.Attribute;
             // Context for the current iteration, includes the right context.
-            var context = new HashSet<Attribute>(contextFromRight);
+            var context = new HashSet<int>(contextFromRight);
             // We use Constant ODs, but interpret them as FDs.
             var fdsToTest = new List<FunctionalDependency>();
             var fdToOd = new Dictionary<FunctionalDependency, OrderCompatibleDependency>();
@@ -45,7 +44,7 @@ public class ListBasedOdAlgorithm
 
                 var correspondingOd = new OrderCompatibleDependency
                 {
-                    Context = new HashSet<Attribute>(context),
+                    Context = new HashSet<int>(context),
                     Lhs = leftOrderSpec,
                     Rhs = rightOrderSpec
                 };
@@ -54,7 +53,7 @@ public class ListBasedOdAlgorithm
                     var fdToTest = new FunctionalDependency
                     {
                         Lhs = correspondingOd.Context,
-                        Rhs = new HashSet<Attribute> { leftAttribute }
+                        Rhs = new HashSet<int> { leftAttribute }
                     };
                     fdToOd.Add(fdToTest, correspondingOd);
                     fdsToTest.Add(fdToTest);
@@ -63,7 +62,7 @@ public class ListBasedOdAlgorithm
 
                 context.Add(leftAttribute);
             }
-            var areProvenValid = FdMembershipAlgorithm.AreValid(fdsToTest, ConstantFds, AllAttributes, rightAttribute);
+            var areProvenValid = FdMembershipAlgorithm.AreValid(fdsToTest, ConstantFds, NumAttributes, rightAttribute);
             foreach (var (fd, isValid) in areProvenValid)
             {
                 if (!isValid) return true;

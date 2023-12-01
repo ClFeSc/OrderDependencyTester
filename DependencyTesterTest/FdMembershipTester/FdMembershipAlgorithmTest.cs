@@ -1,6 +1,5 @@
 using DependencyTester.FdMembershipTester;
 using OrderDependencyModels;
-using Attribute = OrderDependencyModels.Attribute;
 
 namespace DependencyTesterTest.FdMembershipTester;
 
@@ -8,39 +7,29 @@ public class FdMembershipAlgorithmTest
 {
     private record FdToTest(FunctionalDependency FunctionalDependency, bool ShouldBeValid);
 
-    private record FdsToTestWithEarlyReturn(List<FdToTest> FdsToTest, Attribute EarlyReturnAttribute);
-
-    private static List<Attribute> Attributes { get; } = new()
-    {
-        new Attribute("A"),
-        new Attribute("B"),
-        new Attribute("C"),
-        new Attribute("D"),
-        new Attribute("E"),
-        new Attribute("F"),
-    };
+    private record FdsToTestWithEarlyReturn(List<FdToTest> FdsToTest, int EarlyReturnAttribute);
 
     private static HashSet<FunctionalDependency> GroundTruth { get; } = new()
     {
-        new FunctionalDependency(Attributes[0], Attributes[1]),
-        new FunctionalDependency(Attributes[1], Attributes[2]),
+        new FunctionalDependency(0, 1),
+        new FunctionalDependency(1, 2),
         new FunctionalDependency
-            {Lhs = new HashSet<Attribute> {Attributes[0], Attributes[2]}, Rhs = new HashSet<Attribute> {Attributes[3]}},
+            {Lhs = new HashSet<int> {0, 2}, Rhs = new HashSet<int> {3}},
         new FunctionalDependency
         {
-            Lhs = new HashSet<Attribute> {Attributes[1]},
-            Rhs = new HashSet<Attribute> {Attributes[5]}
+            Lhs = new HashSet<int> {1},
+            Rhs = new HashSet<int> {5}
         }
     };
 
     public static IEnumerable<object[]> ToTestForIsValid { get; } = new List<FdToTest[]>
     {
-        new [] { new FdToTest(new FunctionalDependency(Attributes[0], Attributes[2]), true) },
-        new [] { new FdToTest(new FunctionalDependency(Attributes[1], Attributes[2]), true) },
-        new [] { new FdToTest(new FunctionalDependency(Attributes[0], Attributes[0]), true) },
-        new [] { new FdToTest(new FunctionalDependency(Attributes[0], Attributes[3]), true) },
-        new [] { new FdToTest(new FunctionalDependency(Attributes[3], Attributes[2]), false) },
-        new [] { new FdToTest(new FunctionalDependency(Attributes[2], Attributes[1]), false) },
+        new [] { new FdToTest(new FunctionalDependency(0, 2), true) },
+        new [] { new FdToTest(new FunctionalDependency(1, 2), true) },
+        new [] { new FdToTest(new FunctionalDependency(0, 0), true) },
+        new [] { new FdToTest(new FunctionalDependency(0, 3), true) },
+        new [] { new FdToTest(new FunctionalDependency(3, 2), false) },
+        new [] { new FdToTest(new FunctionalDependency(2, 1), false) },
     };
 
     private static readonly List<List<FdToTest>[]> ToTestForAreValidTyped = new()
@@ -49,19 +38,19 @@ public class FdMembershipAlgorithmTest
         {
             new List<FdToTest>
             {
-                new(new FunctionalDependency(new HashSet<Attribute>(), new HashSet<Attribute> {Attributes[0]}),
+                new(new FunctionalDependency(new HashSet<int>(), new HashSet<int> {0}),
                     false),
-                new(new FunctionalDependency(Attributes[0], Attributes[1]), true),
+                new(new FunctionalDependency(0, 1), true),
                 new(
-                    new FunctionalDependency(new HashSet<Attribute> {Attributes[0], Attributes[1]},
-                        new HashSet<Attribute> {Attributes[2]}), true),
+                    new FunctionalDependency(new HashSet<int> {0, 1},
+                        new HashSet<int> {2}), true),
                 new(
-                    new FunctionalDependency(new HashSet<Attribute> {Attributes[0], Attributes[1], Attributes[2]},
-                        new HashSet<Attribute> {Attributes[3]}), true),
+                    new FunctionalDependency(new HashSet<int> {0, 1, 2},
+                        new HashSet<int> {3}), true),
                 new(
                     new FunctionalDependency(
-                        new HashSet<Attribute> {Attributes[0], Attributes[1], Attributes[2], Attributes[3]},
-                        new HashSet<Attribute> {Attributes[4]}), false),
+                        new HashSet<int> {0, 1, 2, 3},
+                        new HashSet<int> {4}), false),
             }
         }
     };
@@ -74,21 +63,21 @@ public class FdMembershipAlgorithmTest
         {
             new FdsToTestWithEarlyReturn(new List<FdToTest>
             {
-                new(new FunctionalDependency(new HashSet<Attribute>(), new HashSet<Attribute> {Attributes[0]}),
+                new(new FunctionalDependency(new HashSet<int>(), new HashSet<int> {0}),
                     false),
-                new(new FunctionalDependency(Attributes[0], Attributes[1]), true),
+                new(new FunctionalDependency(0, 1), true),
                 new(
-                    new FunctionalDependency(new HashSet<Attribute> {Attributes[0], Attributes[1]},
-                        new HashSet<Attribute> {Attributes[2]}), true),
+                    new FunctionalDependency(new HashSet<int> {0, 1},
+                        new HashSet<int> {2}), true),
                 new(
-                    new FunctionalDependency(new HashSet<Attribute> {Attributes[0], Attributes[1], Attributes[2]},
-                        new HashSet<Attribute> {Attributes[3]}), true),
+                    new FunctionalDependency(new HashSet<int> {0, 1, 2},
+                        new HashSet<int> {3}), true),
                 new(
                     new FunctionalDependency(
-                        new HashSet<Attribute> {Attributes[0], Attributes[1], Attributes[2], Attributes[3]},
-                        new HashSet<Attribute> {Attributes[4]}), true),
+                        new HashSet<int> {0, 1, 2, 3},
+                        new HashSet<int> {4}), true),
 
-            }, Attributes[5])
+            }, 5)
         }
     };
 
@@ -96,7 +85,7 @@ public class FdMembershipAlgorithmTest
     [MemberData(nameof(ToTestForIsValid))]
     private void TestIsValid(FdToTest fdToTest)
     {
-        var isValid = FdMembershipAlgorithm.IsValid(fdToTest.FunctionalDependency, GroundTruth, Attributes);
+        var isValid = FdMembershipAlgorithm.IsValid(fdToTest.FunctionalDependency, GroundTruth, 6);
         Assert.Equal(fdToTest.ShouldBeValid, isValid);
     }
 
@@ -105,7 +94,7 @@ public class FdMembershipAlgorithmTest
     private void TestAreValidWithoutEarlyReturn(List<FdToTest> fdsToTest)
     {
         var areValid = FdMembershipAlgorithm.AreValid(fdsToTest.Select(fd => fd.FunctionalDependency).ToArray(),
-            GroundTruth, Attributes);
+            GroundTruth, 6);
 
         foreach (var fd in fdsToTest)
         {
@@ -118,7 +107,7 @@ public class FdMembershipAlgorithmTest
     private void TestAreValidWithEarlyReturn(FdsToTestWithEarlyReturn fdsToTest)
     {
         var areValid = FdMembershipAlgorithm.AreValid(
-            fdsToTest.FdsToTest.Select(fd => fd.FunctionalDependency).ToArray(), GroundTruth, Attributes,
+            fdsToTest.FdsToTest.Select(fd => fd.FunctionalDependency).ToArray(), GroundTruth, 6,
             fdsToTest.EarlyReturnAttribute);
 
         foreach (var fd in fdsToTest.FdsToTest)
