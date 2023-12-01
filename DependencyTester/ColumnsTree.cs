@@ -1,3 +1,4 @@
+using System.Collections;
 using Attribute = OrderDependencyModels.Attribute;
 
 namespace DependencyTester;
@@ -9,28 +10,33 @@ namespace DependencyTester;
 /// <typeparam name="T"></typeparam>
 public class ColumnsTree<T>
 {
-    private readonly Dictionary<Attribute, ColumnsTree<T>> _children = new();
+    private readonly Dictionary<int, ColumnsTree<T>> _children = new();
     private T? _content;
 
-    /// <summary>
-    /// Helper to cleanup sort functions.
-    /// </summary>
-    private static int SortResult(string a, string b) => StringComparer.InvariantCulture.Compare(a, b);
+    private Dictionary<Attribute, int> _attributesMap;
 
-    /// <summary>
-    /// Helper to sort an array of columns. The sorted array is used to have an
-    /// unambiguous path through the tree. Should check for all fields referenced in Column.equals
-    /// </summary>
-    private static int CompareColumns(Attribute c1, Attribute c2) => SortResult(c1.Name, c2.Name);
-
-    /// <returns>
-    /// Columns sorted to be a path along the tree.
-    /// </returns>
-    private static IEnumerable<Attribute> SortedColumns(IEnumerable<Attribute> cc)
+    public ColumnsTree(List<Attribute> allAttributes)
     {
-        var sorted = cc.ToArray();
-        Array.Sort(sorted, CompareColumns);
-        return sorted;
+        _attributesMap = new Dictionary<Attribute, int>();
+        for (int i = 0; i < allAttributes.Count; i++)
+        {
+            _attributesMap.Add(allAttributes[i], i);
+        }
+    }
+
+    public ColumnsTree(Dictionary<Attribute, int> attributesMap)
+    {
+        _attributesMap = attributesMap;
+    }
+
+    public BitArray toBitArray(IEnumerable<Attribute> columns)
+    {
+        var result = new BitArray(_attributesMap.Count);
+        foreach (var column in columns)
+        {
+            result.Set(_attributesMap[column], true);
+        }
+        return result;
     }
 
     /// <summary>
@@ -41,69 +47,45 @@ public class ColumnsTree<T>
     /// </summary>
     public void Add(T content, IEnumerable<Attribute> columns)
     {
-        Traverse(columns)._content = content;
+        Traverse(toBitArray(columns))._content = content;
     }
 
     /// <returns>
     /// The value stored at <paramref name="columns"/>, or `null` if nothing is there.
     /// </returns>
-    public T? Get(IEnumerable<Attribute> columns) => Traverse(columns)._content;
+    public T? Get(IEnumerable<Attribute> columns) => Traverse(toBitArray(columns))._content;
 
-    private ColumnsTree<T> Traverse(IEnumerable<Attribute> columns)
+    private ColumnsTree<T> Traverse(BitArray columns)
     {
         var current = this;
-        foreach (var column in SortedColumns(columns))
+        for (int i = 0; i < columns.Count; i++)
         {
-            current._children.TryAdd(column, new ColumnsTree<T>());
-            current = current._children[column];
+            if (columns[i] == false) continue;
+            current._children.TryAdd(i, new ColumnsTree<T>(_attributesMap));
+            current = current._children[i];
         }
-
         return current;
     }
-
-    private List<KeyValuePair<Attribute, ColumnsTree<T>>> SortedEntries()
+    public List<T> GetSubsets(HashSet<Attribute> columns)
     {
-        var entries = new List<KeyValuePair<Attribute, ColumnsTree<T>>>(_children);
-        entries.Sort((pair, valuePair) => CompareColumns(pair.Key, valuePair.Key));
-        return entries;
+        BitArray columnBits = toBitArray(columns);
+        return GetSubsets(columnBits);
     }
+
 
     /// <returns>
     /// All values stored in the tree for a subset of the given <paramref name="columns"/>.
     /// </returns>
-    public List<T> GetSubsets(HashSet<Attribute> columns)
+    public List<T> GetSubsets(BitArray columns)
     {
-        var result = SortedEntries().SelectMany<KeyValuePair<Attribute, ColumnsTree<T>>, T>(pair =>
-        {
-            var column = pair.Key;
-            var lhsTree = pair.Value;
-            if (!columns.Contains(column) || columns.Count == 0) return Array.Empty<T>();
-            var newLhs = new HashSet<Attribute>(columns);
-            newLhs.Remove(column);
-            return lhsTree.GetSubsets(newLhs);
+        var result = _children.Where(item => columns.Get(item.Key)).SelectMany((item) => {
+            var childColumns = new BitArray(columns);
+            childColumns.Set(item.Key, false);
+            return _children[item.Key].GetSubsets(childColumns);
         }).ToList();
+       
         if (_content is not null) result.Add(_content);
         return result;
-    }
-
-    /// <returns>
-    /// A ColumnsTree containing only values stored at a subset of <paramref name="columns"/>.
-    /// </returns>
-    private ColumnsTree<T> GetSubtree(IReadOnlySet<Attribute> columns)
-    {
-        var newTree = new ColumnsTree<T>
-        {
-            _content = _content
-        };
-        foreach (var (column, subtree) in SortedEntries())
-        {
-            if (!columns.Contains(column)) continue;
-            var newColumns = new HashSet<Attribute>(columns);
-            newColumns.Remove(column);
-            newTree._children.Add(column, subtree.GetSubtree(newColumns));
-        }
-
-        return newTree;
     }
 
     /// <returns>
@@ -111,7 +93,7 @@ public class ColumnsTree<T>
     /// </returns>
     public List<T> GetAll()
     {
-        var result = SortedEntries().SelectMany(pair => pair.Value.GetAll()).ToList();
+        var result = _children.SelectMany(pair => pair.Value.GetAll()).ToList();
         if (_content is not null) result.Add(_content);
         return result;
     }

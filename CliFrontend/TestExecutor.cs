@@ -18,16 +18,16 @@ public static class TestExecutor
             Console.Error.WriteLine($"Warning: No ODs are being tested. Check your input data.");
         }
 
+        var attributes = File.ReadAllLines(attributesPath).Where(line => !string.IsNullOrWhiteSpace(line))
+            .Select(line => new Attribute(line)).ToList();
 
-        var compatiblesTree = new ColumnsTree<HashSet<OrderCompatibleDependency>>();
+        var compatiblesTree = new ColumnsTree<HashSet<OrderCompatibleDependency>>(attributes);
         foreach (var compatibleOd in knownDependencies.startingCompOds)
         {
             var set = compatiblesTree.Get(compatibleOd.Context) ?? new HashSet<OrderCompatibleDependency>();
             set.Add(compatibleOd);
             compatiblesTree.Add(set, compatibleOd.Context);
         }
-        var attributes = File.ReadAllLines(attributesPath).Where(line => !string.IsNullOrWhiteSpace(line))
-            .Select(line => new Attribute(line)).ToList();
 
         var algo = new ListBasedOdAlgorithm
         {
