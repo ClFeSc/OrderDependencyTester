@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using DependencyTester.FdMembershipTester;
 using OrderDependencyModels;
 
@@ -62,6 +63,10 @@ public class ListBasedOdAlgorithm
 
                 context.Add(leftAttribute);
             }
+            contextFromRight.Add(rightAttribute);
+
+            if (fdsToTest.Count == 0) continue;
+
             var areProvenValid = FdMembershipAlgorithm.AreValid(fdsToTest, ConstantFds, NumAttributes, rightAttribute);
             foreach (var (fd, isValid) in areProvenValid)
             {
@@ -74,7 +79,7 @@ public class ListBasedOdAlgorithm
                 // There is no way this OD still holds. Since all ODs have to hold, there exists a Swap somewhere.
                 // if (!isNowValid) return true;
             }
-            contextFromRight.Add(rightAttribute);
+
         }
         // No Swaps have been found.
         return false;
