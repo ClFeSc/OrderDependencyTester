@@ -40,10 +40,26 @@ public class ColumnsTree<T>
         Traverse(toBitArray(columns))._content = content;
     }
 
+    /// <summary>
+    /// Adds a value to the tree.
+    ///
+    /// <param name="content">The value to be set.</param>
+    /// <param name="columns">The location to store the values at.</param>
+    /// </summary>
+    public void Add(T content, BitArray columns)
+    {
+        Traverse(columns)._content = content;
+    }
+
     /// <returns>
     /// The value stored at <paramref name="columns"/>, or `null` if nothing is there.
     /// </returns>
     public T? Get(IEnumerable<int> columns) => Traverse(toBitArray(columns))._content;
+
+    /// <returns>
+    /// The value stored at <paramref name="columns"/>, or `null` if nothing is there.
+    /// </returns>
+    public T? Get(BitArray columns) => Traverse(columns)._content;
 
     private ColumnsTree<T> Traverse(BitArray columns)
     {

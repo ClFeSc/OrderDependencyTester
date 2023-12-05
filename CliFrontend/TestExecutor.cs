@@ -37,7 +37,13 @@ public static class TestExecutor
             compatiblesTree.Add(set, compatibleOd.Context);
         }
 
-        var algo = new ListBasedOdAlgorithm(knownDependencies.startingCods,compatiblesTree,attributes.Count);
+        // var algo = new ListBasedOdAlgorithm(knownDependencies.startingCods,compatiblesTree,attributes.Count);
+        var algo = new ListBasedOdAlgorithm
+        {
+            Constants = knownDependencies.startingCods,
+            CompatiblesTree = compatiblesTree,
+            NumberOfAttributes = attributes.Count
+        };
 
         return algo.AreValid(testDependencies);
     }

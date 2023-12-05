@@ -1,3 +1,4 @@
+using System.Collections;
 using DependencyTester.FdMembershipTester;
 using OrderDependencyModels;
 
@@ -9,27 +10,33 @@ public class FdMembershipAlgorithmTest
 
     private record FdsToTestWithEarlyReturn(List<FdToTest> FdsToTest, int EarlyReturnAttribute);
 
+    private static int NumberOfAttributes { get; } = 6;
+
+    private static BitArray BitArraySetAt(HashSet<int> indices)
+    {
+        var array = new BitArray(NumberOfAttributes);
+        foreach (var index in indices)
+            array.Set(index, true);
+        return array;
+    }
+
     private static HashSet<FunctionalDependency> GroundTruth { get; } = new()
     {
-        new FunctionalDependency(0, 1),
-        new FunctionalDependency(1, 2),
+        new FunctionalDependency(0, 1, NumberOfAttributes),
+        new FunctionalDependency(1, 2, NumberOfAttributes),
         new FunctionalDependency
-            {Lhs = new HashSet<int> {0, 2}, Rhs = new HashSet<int> {3}},
-        new FunctionalDependency
-        {
-            Lhs = new HashSet<int> {1},
-            Rhs = new HashSet<int> {5}
-        }
+            {Lhs = BitArraySetAt(new HashSet<int> {0, 2}), Rhs = BitArraySetAt(new HashSet<int> {3})},
+        new FunctionalDependency(1, 5, NumberOfAttributes),
     };
 
     public static IEnumerable<object[]> ToTestForIsValid { get; } = new List<FdToTest[]>
     {
-        new [] { new FdToTest(new FunctionalDependency(0, 2), true) },
-        new [] { new FdToTest(new FunctionalDependency(1, 2), true) },
-        new [] { new FdToTest(new FunctionalDependency(0, 0), true) },
-        new [] { new FdToTest(new FunctionalDependency(0, 3), true) },
-        new [] { new FdToTest(new FunctionalDependency(3, 2), false) },
-        new [] { new FdToTest(new FunctionalDependency(2, 1), false) },
+        new [] { new FdToTest(new FunctionalDependency(0, 2, NumberOfAttributes), true) },
+        new [] { new FdToTest(new FunctionalDependency(1, 2, NumberOfAttributes), true) },
+        new [] { new FdToTest(new FunctionalDependency(0, 0, NumberOfAttributes), true) },
+        new [] { new FdToTest(new FunctionalDependency(0, 3, NumberOfAttributes), true) },
+        new [] { new FdToTest(new FunctionalDependency(3, 2, NumberOfAttributes), false) },
+        new [] { new FdToTest(new FunctionalDependency(2, 1, NumberOfAttributes), false) },
     };
 
     private static readonly List<List<FdToTest>[]> ToTestForAreValidTyped = new()
@@ -38,19 +45,19 @@ public class FdMembershipAlgorithmTest
         {
             new List<FdToTest>
             {
-                new(new FunctionalDependency(new HashSet<int>(), new HashSet<int> {0}),
+                new(new FunctionalDependency(BitArraySetAt(new HashSet<int>()), BitArraySetAt(new HashSet<int> {0})),
                     false),
-                new(new FunctionalDependency(0, 1), true),
+                new(new FunctionalDependency(0, 1, NumberOfAttributes), true),
                 new(
-                    new FunctionalDependency(new HashSet<int> {0, 1},
-                        new HashSet<int> {2}), true),
+                    new FunctionalDependency(BitArraySetAt(new HashSet<int> {0, 1}),
+                        BitArraySetAt(new HashSet<int> {2})), true),
                 new(
-                    new FunctionalDependency(new HashSet<int> {0, 1, 2},
-                        new HashSet<int> {3}), true),
+                    new FunctionalDependency(BitArraySetAt(new HashSet<int> {0, 1, 2}),
+                        BitArraySetAt(new HashSet<int> {3})), true),
                 new(
                     new FunctionalDependency(
-                        new HashSet<int> {0, 1, 2, 3},
-                        new HashSet<int> {4}), false),
+                        BitArraySetAt(new HashSet<int> {0, 1, 2, 3}),
+                        BitArraySetAt(new HashSet<int> {4})), false),
             }
         }
     };
@@ -63,19 +70,19 @@ public class FdMembershipAlgorithmTest
         {
             new FdsToTestWithEarlyReturn(new List<FdToTest>
             {
-                new(new FunctionalDependency(new HashSet<int>(), new HashSet<int> {0}),
+                new(new FunctionalDependency(BitArraySetAt(new HashSet<int>()), BitArraySetAt(new HashSet<int> {0})),
                     false),
-                new(new FunctionalDependency(0, 1), true),
+                new(new FunctionalDependency(0, 1, NumberOfAttributes), true),
                 new(
-                    new FunctionalDependency(new HashSet<int> {0, 1},
-                        new HashSet<int> {2}), true),
+                    new FunctionalDependency(BitArraySetAt(new HashSet<int> {0, 1}),
+                        BitArraySetAt(new HashSet<int> {2})), true),
                 new(
-                    new FunctionalDependency(new HashSet<int> {0, 1, 2},
-                        new HashSet<int> {3}), true),
+                    new FunctionalDependency(BitArraySetAt(new HashSet<int> {0, 1, 2}),
+                BitArraySetAt(new HashSet<int> {3})), true),
                 new(
                     new FunctionalDependency(
-                        new HashSet<int> {0, 1, 2, 3},
-                        new HashSet<int> {4}), true),
+                        BitArraySetAt(new HashSet<int> {0, 1, 2, 3}),
+                        BitArraySetAt(new HashSet<int> {4})), true),
 
             }, 5)
         }

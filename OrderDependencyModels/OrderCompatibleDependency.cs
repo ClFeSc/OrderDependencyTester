@@ -6,7 +6,7 @@ namespace OrderDependencyModels;
 
 public readonly partial record struct OrderCompatibleDependency : IEnumerable<OrderSpecification>, ISetBasedOrderDependency
 {
-    public required HashSet<int> Context { get; init; }
+    public required BitArray Context { get; init; }
     private readonly HashSet<OrderSpecification> _sides;
     public required OrderSpecification Lhs
     {
@@ -44,10 +44,11 @@ public readonly partial record struct OrderCompatibleDependency : IEnumerable<Or
         }
 
         var splitted = match.Groups[1].Value.Split(", ");
-        var context = new HashSet<int>(splitted.Length);
+        var context = new BitArray(attributesMap.Count);
+        
         foreach (var attribute in splitted.Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => attributesMap[x]))
         {
-            context.Add(attribute);
+            context.Set(attribute, true);
         }
         var lhs = OrderSpecification.Parse(attributesMap,match.Groups[2].Value);
         var rhs = OrderSpecification.Parse(attributesMap,match.Groups[3].Value);

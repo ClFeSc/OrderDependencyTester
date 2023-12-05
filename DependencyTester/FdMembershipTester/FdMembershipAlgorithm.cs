@@ -1,3 +1,4 @@
+using System.Collections;
 using OrderDependencyModels;
 
 namespace DependencyTester.FdMembershipTester;
@@ -5,19 +6,23 @@ namespace DependencyTester.FdMembershipTester;
 public class FdMembershipAlgorithm
 {
 
-    private Dictionary<int, List<FunctionalDependency>> _fdsByAttribute = new Dictionary<int, List<FunctionalDependency>>();
+    private readonly Dictionary<int, List<FunctionalDependency>> _fdsByAttribute = new();
 
-    public FdMembershipAlgorithm(IEnumerable<FunctionalDependency> fds, int NumAttributes)
+    private int NumAttributes { get; init; }
+
+    public FdMembershipAlgorithm(IEnumerable<FunctionalDependency> fds, int numAttributes)
     {
-        for (int i = 0; i < NumAttributes; i++)
+        NumAttributes = numAttributes;
+        for (var i = 0; i < NumAttributes; i++)
         {
             _fdsByAttribute[i] = new List<FunctionalDependency>();
         }
         foreach (var fd in fds)
         {
-            foreach (var column in fd.Lhs)
+            for (var columnIndex = 0; columnIndex < fd.Lhs.Count; columnIndex++)
             {
-                _fdsByAttribute[column].Add(fd);
+                if (!fd.Lhs.Get(columnIndex)) continue;
+                _fdsByAttribute[columnIndex].Add(fd);
             }
         }
     }
@@ -33,7 +38,7 @@ public class FdMembershipAlgorithm
     public Dictionary<FunctionalDependency, bool> AreValid(IList<FunctionalDependency> fdsUnderTest,
         int? earlyReturnAttribute = null)
     {
-        var reachableDependants = new HashSet<int>();
+        var reachableDependants = new BitArray(NumAttributes);
         // var fdsPerAttribute = new Dictionary<Attribute, List<AnnotatedFd>>(allAttributes.Select(attribute =>
         //     new KeyValuePair<Attribute, List<AnnotatedFd>>(attribute, new List<AnnotatedFd>(groundTruth.Count()))));
         var remainingAttributes = new Queue<int>();
@@ -46,36 +51,55 @@ public class FdMembershipAlgorithm
         foreach (var fdUnderTest in fdsUnderTest)
         {
             fdIndex++;
-            foreach (var lhsAttribute in fdUnderTest.Lhs.Where(lhsAttribute => !reachableDependants.Contains(lhsAttribute)))
+            for (var lhsAttributeIndex = 0; lhsAttributeIndex < fdUnderTest.Lhs.Count; lhsAttributeIndex++)
             {
-                remainingAttributes.Enqueue(lhsAttribute);
+                if (!fdUnderTest.Lhs.Get(lhsAttributeIndex)) continue;
+                var containedInReachableDependents = reachableDependants.Get(lhsAttributeIndex);
+                if (!containedInReachableDependents) continue;
+                remainingAttributes.Enqueue(lhsAttributeIndex);
             }
-            reachableDependants.UnionWith(fdUnderTest.Lhs);
+            reachableDependants.Or(fdUnderTest.Lhs);
 
             while (remainingAttributes.TryDequeue(out var attribute))
             {
                 foreach (var fd in _fdsByAttribute[attribute])
                 {
                     requiredAttributeCounts.TryAdd(fd,fd.Lhs.Count);
-                    var RequiredAttributes = requiredAttributeCounts[fd] = requiredAttributeCounts[fd] - 1;
+                    var requiredAttributes = requiredAttributeCounts[fd] = requiredAttributeCounts[fd] - 1;
 
 
-                    if (RequiredAttributes != 0) continue;
-                    foreach (var dependentAttribute in fd.Rhs.Where(dependentAttribute => !reachableDependants.Contains(dependentAttribute)))
+                    if (requiredAttributes != 0) continue;
+                    for (var dependentAttributeIndex = 0;
+                         dependentAttributeIndex < fd.Rhs.Count;
+                         dependentAttributeIndex++)
                     {
-                        if (earlyReturnAttribute == dependentAttribute)
+                        if (!fd.Rhs.Get(dependentAttributeIndex)) continue;
+                        
+                        var containedInReachableDependents = reachableDependants.Get(dependentAttributeIndex);
+                        if (!containedInReachableDependents) continue;
+                    // }
+                    // foreach (var dependentAttribute in fd.Rhs.Where(dependentAttribute => !reachableDependants.Contains(dependentAttribute)))
+                    // {
+                        if (earlyReturnAttribute == dependentAttributeIndex)
                             return new Dictionary<FunctionalDependency, bool>(result.Select((pair, idx) =>
                             {
                                 var isValid = idx >= fdIndex || pair.Value;
                                 return new KeyValuePair<FunctionalDependency, bool>(pair.Key, isValid);
                             }));
-                        reachableDependants.Add(dependentAttribute);
-                        remainingAttributes.Enqueue(dependentAttribute);
+                        reachableDependants.Set(dependentAttributeIndex, true);
+                        remainingAttributes.Enqueue(dependentAttributeIndex);
                     }
                 }
             }
 
-            result[fdUnderTest] = fdUnderTest.Rhs.All(reachableDependants.Contains);
+            result[fdUnderTest] = true;
+            for (var fdUnderTestRhsIndex = 0; fdUnderTestRhsIndex < fdUnderTest.Rhs.Count; fdUnderTestRhsIndex++)
+            {
+                if (!fdUnderTest.Rhs.Get(fdUnderTestRhsIndex)) continue;
+                if (reachableDependants.Get(fdUnderTestRhsIndex)) continue;
+                result[fdUnderTest] = false;
+                break;
+            }
         }
 
         return result;

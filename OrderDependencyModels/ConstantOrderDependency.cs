@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 
@@ -5,7 +6,7 @@ namespace OrderDependencyModels;
 
 public readonly partial record struct ConstantOrderDependency : ISetBasedOrderDependency
 {
-    public required HashSet<int> Context { get; init; }
+    public required BitArray Context { get; init; }
     public required int RightHandSide { get; init; }
 
     public override string ToString() => $"{{{string.Join(", ", Context)}}}: [] ↦ {RightHandSide}";
@@ -20,11 +21,16 @@ public readonly partial record struct ConstantOrderDependency : ISetBasedOrderDe
             return false;
         }
 
-        var context = match.Groups[1].Value.Split(", ").Where(x=>!string.IsNullOrWhiteSpace(x)).Select(x => attributesMap[x]);
+        var contextIndices = match.Groups[1].Value.Split(", ").Where(x=>!string.IsNullOrWhiteSpace(x)).Select(x => attributesMap[x]);
+        var context = new BitArray(attributesMap.Count);
+        foreach (var contextIndex in contextIndices)
+        {
+            context.Set(contextIndex, true);
+        }
         var rhs = attributesMap[match.Groups[2].Value];
         constantOrderDependency = new ConstantOrderDependency
         {
-            Context = new HashSet<int>(context),
+            Context = context,
             RightHandSide = rhs
         };
         return true;

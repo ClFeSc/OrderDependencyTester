@@ -1,5 +1,4 @@
-using System.Reflection.Metadata;
-using System.Runtime.InteropServices;
+using System.Collections;
 using DependencyTester.FdMembershipTester;
 using OrderDependencyModels;
 
@@ -7,38 +6,48 @@ namespace DependencyTester.ListBasedOdMembershipTester;
 
 public class ListBasedOdAlgorithm
 {
-    private ICollection<ConstantOrderDependency> _constants;
-    private ColumnsTree<HashSet<OrderCompatibleDependency>> _compatiblesTree;
+    public required ICollection<ConstantOrderDependency> Constants { private get; init; }
+    public required ColumnsTree<HashSet<OrderCompatibleDependency>> CompatiblesTree { private get; init; }
+    public required int NumberOfAttributes { private get; init; }
+    private FdMembershipAlgorithm? _fdAlgo;
 
-
-    public ListBasedOdAlgorithm(ICollection<ConstantOrderDependency> Constants, ColumnsTree<HashSet<OrderCompatibleDependency>> CompatiblesTree, int NumAttributes){
-        _constants = Constants;
-        _compatiblesTree = CompatiblesTree;
-        _fdAlgo = new FdMembershipAlgorithm(Constants.Select(FunctionalDependency.FromConstantOrderDependency).ToArray(),NumAttributes);
-    }
-
-    private FdMembershipAlgorithm _fdAlgo;
+    private FdMembershipAlgorithm FdAlgo => _fdAlgo ??=
+        new FdMembershipAlgorithm(Constants.Select(FunctionalDependency.FromConstantOrderDependency).ToArray(),
+            NumberOfAttributes);
 
 
     private bool SplitsExist(ListBasedOrderDependency odUnderTest)
     {
-        var fd = new FunctionalDependency(
-            new HashSet<int>(odUnderTest.LeftHandSide.Select(orderSpec => orderSpec.Attribute)),
-            new HashSet<int>(odUnderTest.RightHandSide.Select(orderSpec => orderSpec.Attribute)));
-        return !_fdAlgo.IsValid(fd);
+        var fd = new FunctionalDependency
+        {
+            Lhs = BitArrayFrom(odUnderTest.LeftHandSide.Select(orderSpec => orderSpec.Attribute), NumberOfAttributes),
+            Rhs = BitArrayFrom(odUnderTest.RightHandSide.Select(orderSpec => orderSpec.Attribute), NumberOfAttributes),
+        };
+        return !FdAlgo.IsValid(fd);
+
+        static BitArray BitArrayFrom(IEnumerable<int> toSet, int size)
+        {
+            var bitArray = new BitArray(size);
+            foreach (var indexToSet in toSet)
+            {
+                bitArray.Set(indexToSet, true);
+            }
+
+            return bitArray;
+        }
     }
 
     private bool SwapsExist(ListBasedOrderDependency odUnderTest)
     {
         // This context is formed from the RHS of the list-based OD.
         // In the inner loop, the LHS attributes are added independently.
-        var contextFromRight = new HashSet<int>();
+        var contextFromRight = new BitArray(NumberOfAttributes);
 
         foreach (var rightOrderSpec in odUnderTest.RightHandSide)
         {
             var rightAttribute = rightOrderSpec.Attribute;
             // Context for the current iteration, includes the right context.
-            var context = new HashSet<int>(contextFromRight);
+            var context = new BitArray(contextFromRight);
             // We use Constant ODs, but interpret them as FDs.
             var fdsToTest = new List<FunctionalDependency>();
             var fdToOd = new Dictionary<FunctionalDependency, OrderCompatibleDependency>();
@@ -49,29 +58,31 @@ public class ListBasedOdAlgorithm
 
                 var correspondingOd = new OrderCompatibleDependency
                 {
-                    Context = new HashSet<int>(context),
+                    Context = new BitArray(context),
                     Lhs = leftOrderSpec,
                     Rhs = rightOrderSpec
                 };
                 if (!IsValid(correspondingOd))
                 {
+                    var rhs = new BitArray(NumberOfAttributes);
+                    rhs.Set(leftAttribute, true);
                     var fdToTest = new FunctionalDependency
                     {
                         Lhs = correspondingOd.Context,
-                        Rhs = new HashSet<int> { leftAttribute }
+                        Rhs = rhs,
                     };
                     fdToOd.Add(fdToTest, correspondingOd);
                     fdsToTest.Add(fdToTest);
                 }
 
 
-                context.Add(leftAttribute);
+                context.Set(leftAttribute, true);
             }
-            contextFromRight.Add(rightAttribute);
+            contextFromRight.Set(rightAttribute, true);
 
             if (fdsToTest.Count == 0) continue;
 
-            var areProvenValid = _fdAlgo.AreValid(fdsToTest, rightAttribute);
+            var areProvenValid = FdAlgo.AreValid(fdsToTest, rightAttribute);
             foreach (var (fd, isValid) in areProvenValid)
             {
                 if (!isValid) return true;
@@ -99,7 +110,7 @@ public class ListBasedOdAlgorithm
         }
 
         // 2. Check if LHS or RHS is part of Context.
-        if (odCandidate.Any(side => odCandidate.Context.Contains(side.Attribute)))
+        if (odCandidate.Any(side => odCandidate.Context.Get(side.Attribute)))
         {
             return true;
         }
@@ -110,7 +121,7 @@ public class ListBasedOdAlgorithm
                HasSupersetByAugmentation(odCandidate.Reverse());
 
         bool HasSupersetByAugmentation(OrderCompatibleDependency orderCompatibleDependency) =>
-            _compatiblesTree.GetSubsets(orderCompatibleDependency.Context)
+            CompatiblesTree.GetSubsets(orderCompatibleDependency.Context)
                 .Any(set => set.Any(other => orderCompatibleDependency
                     .All(os => other.Contains(os)))
                 );
