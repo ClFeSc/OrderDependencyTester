@@ -56,12 +56,9 @@ public class FdMembershipAlgorithm
             {
                 foreach (var fd in _fdsByAttribute[attribute])
                 {
-                    if (!requiredAttributeCounts.ContainsKey(fd))
-                    {
-                        requiredAttributeCounts[fd] = fd.Lhs.Count;
-                    }
-
+                    requiredAttributeCounts.TryAdd(fd,fd.Lhs.Count);
                     var RequiredAttributes = requiredAttributeCounts[fd] = requiredAttributeCounts[fd] - 1;
+
 
                     if (RequiredAttributes != 0) continue;
                     foreach (var dependentAttribute in fd.Rhs.Where(dependentAttribute => !reachableDependants.Contains(dependentAttribute)))
