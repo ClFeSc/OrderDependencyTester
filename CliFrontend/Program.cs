@@ -1,11 +1,11 @@
 ﻿using CliFrontend;
 
-// args = new[]
-// {
-//     "/home/clemens/Dokumente/HPI/WiSe_2023-2024/Advanced_Data_Profiling/nextcloud/WiSe 2023-2024 Advanced Data Profiling/Example DISTOD Results/horse-sub-results.txt",
-//     "/home/clemens/Dokumente/HPI/WiSe_2023-2024/Advanced_Data_Profiling/code/OrderDependencyTester/testdata/Horse-300-27/valid_all.unique.txt",
-//     "/home/clemens/Dokumente/HPI/WiSe_2023-2024/Advanced_Data_Profiling/code/OrderDependencyTester/testdata/Horse-300-27/attributes.txt"
-// };
+args = new[]
+{
+"/Users/paulsieben/HPI/WiSe 2023-2024 Advanced Data Profiling/Example DISTOD Results/horse-sub-results.txt",
+ "/Users/paulsieben/Programming/OrderDependencyTester/testdata/Horse-300-27/invalid_2_2.txt",
+  "/Users/paulsieben/Programming/OrderDependencyTester/testdata/Horse-300-27/attributes.txt"
+};
 
 if (args.Length != 3)
 {

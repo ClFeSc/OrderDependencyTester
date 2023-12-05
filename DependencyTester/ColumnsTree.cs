@@ -1,5 +1,4 @@
 using System.Collections;
-using Attribute = OrderDependencyModels.Attribute;
 
 namespace DependencyTester;
 
@@ -13,28 +12,19 @@ public class ColumnsTree<T>
     private readonly Dictionary<int, ColumnsTree<T>> _children = new();
     private T? _content;
 
-    private Dictionary<Attribute, int> _attributesMap;
+    private int _numAttributes;
 
-    public ColumnsTree(List<Attribute> allAttributes)
+    public ColumnsTree(int numAttributes)
     {
-        _attributesMap = new Dictionary<Attribute, int>();
-        for (int i = 0; i < allAttributes.Count; i++)
-        {
-            _attributesMap.Add(allAttributes[i], i);
-        }
+        _numAttributes = numAttributes;
     }
 
-    public ColumnsTree(Dictionary<Attribute, int> attributesMap)
+    public BitArray toBitArray(IEnumerable<int> columns)
     {
-        _attributesMap = attributesMap;
-    }
-
-    public BitArray toBitArray(IEnumerable<Attribute> columns)
-    {
-        var result = new BitArray(_attributesMap.Count);
+        var result = new BitArray(_numAttributes);
         foreach (var column in columns)
         {
-            result.Set(_attributesMap[column], true);
+            result.Set(column, true);
         }
         return result;
     }
@@ -45,7 +35,7 @@ public class ColumnsTree<T>
     /// <param name="content">The value to be set.</param>
     /// <param name="columns">The location to store the values at.</param>
     /// </summary>
-    public void Add(T content, IEnumerable<Attribute> columns)
+    public void Add(T content, IEnumerable<int> columns)
     {
         Traverse(toBitArray(columns))._content = content;
     }
@@ -53,7 +43,7 @@ public class ColumnsTree<T>
     /// <returns>
     /// The value stored at <paramref name="columns"/>, or `null` if nothing is there.
     /// </returns>
-    public T? Get(IEnumerable<Attribute> columns) => Traverse(toBitArray(columns))._content;
+    public T? Get(IEnumerable<int> columns) => Traverse(toBitArray(columns))._content;
 
     private ColumnsTree<T> Traverse(BitArray columns)
     {
@@ -61,12 +51,12 @@ public class ColumnsTree<T>
         for (int i = 0; i < columns.Count; i++)
         {
             if (columns[i] == false) continue;
-            current._children.TryAdd(i, new ColumnsTree<T>(_attributesMap));
+            current._children.TryAdd(i, new ColumnsTree<T>(_numAttributes));
             current = current._children[i];
         }
         return current;
     }
-    public List<T> GetSubsets(HashSet<Attribute> columns)
+    public List<T> GetSubsets(HashSet<int> columns)
     {
         BitArray columnBits = toBitArray(columns);
         return GetSubsets(columnBits);
