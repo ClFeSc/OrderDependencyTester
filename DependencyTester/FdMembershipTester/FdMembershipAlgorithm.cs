@@ -1,11 +1,52 @@
 using System.Collections;
+using System.Collections.Specialized;
 using OrderDependencyModels;
 
 namespace DependencyTester.FdMembershipTester;
 
+public static class BitArrayExtensions
+{
+    public static void PrintValues(this BitArray self, int itemsPerLine = 10)
+    {
+        int curerntItems = itemsPerLine;
+        foreach (var obj in self)
+        {
+            if (curerntItems <= 0)
+            {
+                curerntItems = itemsPerLine;
+                Console.WriteLine();
+            }
+
+            curerntItems--;
+            Console.Write("{0,8}", obj);
+        }
+
+        Console.WriteLine();
+    }
+
+    public static IEnumerable<int> Ones(this BitArray self)
+    {
+        for (int i = 0; i < self.Length; i++)
+            if (self[i])
+                yield return i;
+    }
+
+    public static int OnesCount(this BitArray self)
+    {
+        int onesCount = 0;
+        foreach (var bit in self.Ones()) onesCount++;
+        return onesCount;
+    }
+
+    public static bool EqualBitsSet(this BitArray self, BitArray other)
+    {
+        var xored = self.Xor(other);
+        return xored.OnesCount() == 0;
+    }
+}
+
 public class FdMembershipAlgorithm
 {
-
     private readonly Dictionary<int, List<FunctionalDependency>> _fdsByAttribute = new();
 
     private int NumAttributes { get; init; }
@@ -17,11 +58,11 @@ public class FdMembershipAlgorithm
         {
             _fdsByAttribute[i] = new List<FunctionalDependency>();
         }
+
         foreach (var fd in fds)
         {
-            for (var columnIndex = 0; columnIndex < fd.Lhs.Count; columnIndex++)
+            foreach (var columnIndex in fd.Lhs.Ones())
             {
-                if (!fd.Lhs.Get(columnIndex)) continue;
                 _fdsByAttribute[columnIndex].Add(fd);
             }
         }
@@ -51,55 +92,38 @@ public class FdMembershipAlgorithm
         foreach (var fdUnderTest in fdsUnderTest)
         {
             fdIndex++;
-            for (var lhsAttributeIndex = 0; lhsAttributeIndex < fdUnderTest.Lhs.Count; lhsAttributeIndex++)
-            {
-                if (!fdUnderTest.Lhs.Get(lhsAttributeIndex)) continue;
-                var containedInReachableDependents = reachableDependants.Get(lhsAttributeIndex);
-                if (!containedInReachableDependents) continue;
-                remainingAttributes.Enqueue(lhsAttributeIndex);
-            }
-            reachableDependants.Or(fdUnderTest.Lhs);
+            // enqueue all in lhs that are not in reachableDependants
+            var newRemainings = new BitArray(fdUnderTest.Lhs).Xor(reachableDependants).And(fdUnderTest.Lhs);
+            foreach (var index in newRemainings.Ones())
+                remainingAttributes.Enqueue(index);
 
+            reachableDependants.Or(fdUnderTest.Lhs);
+            
             while (remainingAttributes.TryDequeue(out var attribute))
             {
                 foreach (var fd in _fdsByAttribute[attribute])
                 {
-                    requiredAttributeCounts.TryAdd(fd,fd.Lhs.Count);
-                    var requiredAttributes = requiredAttributeCounts[fd] = requiredAttributeCounts[fd] - 1;
-
-
+                    requiredAttributeCounts.TryAdd(fd, fd.Lhs.OnesCount());
+                    var requiredAttributes = requiredAttributeCounts[fd] -= 1;
                     if (requiredAttributes != 0) continue;
-                    for (var dependentAttributeIndex = 0;
-                         dependentAttributeIndex < fd.Rhs.Count;
-                         dependentAttributeIndex++)
-                    {
-                        if (!fd.Rhs.Get(dependentAttributeIndex)) continue;
-                        
-                        var containedInReachableDependents = reachableDependants.Get(dependentAttributeIndex);
-                        if (!containedInReachableDependents) continue;
-                    // }
-                    // foreach (var dependentAttribute in fd.Rhs.Where(dependentAttribute => !reachableDependants.Contains(dependentAttribute)))
-                    // {
-                        if (earlyReturnAttribute == dependentAttributeIndex)
-                            return new Dictionary<FunctionalDependency, bool>(result.Select((pair, idx) =>
-                            {
-                                var isValid = idx >= fdIndex || pair.Value;
-                                return new KeyValuePair<FunctionalDependency, bool>(pair.Key, isValid);
-                            }));
-                        reachableDependants.Set(dependentAttributeIndex, true);
-                        remainingAttributes.Enqueue(dependentAttributeIndex);
-                    }
+
+                    // enqueue all in rhs that are not in reachableDependants
+                    var newlyReachable = new BitArray(fd.Rhs).Xor(reachableDependants).And(fd.Rhs);
+                    foreach (var col in newlyReachable.Ones())
+                        remainingAttributes.Enqueue(col);
+                    reachableDependants.Or(fd.Rhs);
+
+                    if (earlyReturnAttribute != null && reachableDependants.Get((int)earlyReturnAttribute))
+                        return new Dictionary<FunctionalDependency, bool>(result.Select((pair, idx) =>
+                        {
+                            var isValid = idx >= fdIndex || pair.Value;
+                            return new KeyValuePair<FunctionalDependency, bool>(pair.Key, isValid);
+                        }));
                 }
             }
 
-            result[fdUnderTest] = true;
-            for (var fdUnderTestRhsIndex = 0; fdUnderTestRhsIndex < fdUnderTest.Rhs.Count; fdUnderTestRhsIndex++)
-            {
-                if (!fdUnderTest.Rhs.Get(fdUnderTestRhsIndex)) continue;
-                if (reachableDependants.Get(fdUnderTestRhsIndex)) continue;
-                result[fdUnderTest] = false;
-                break;
-            }
+            var coveredColumns = new BitArray(reachableDependants).And(fdUnderTest.Rhs);
+            result[fdUnderTest] = coveredColumns.EqualBitsSet(fdUnderTest.Rhs);
         }
 
         return result;
