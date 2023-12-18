@@ -1,12 +1,17 @@
+using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 
 namespace OrderDependencyModels;
 
-public readonly partial record struct ConstantOrderDependency
-    (HashSet<Attribute> Context, Attribute RightHandSide) : ISetBasedOrderDependency
+public readonly partial record struct ConstantOrderDependency : ISetBasedOrderDependency
 {
-    public static bool TryParse(string spec, [NotNullWhen(true)] out ConstantOrderDependency? constantOrderDependency)
+    public required BitArray Context { get; init; }
+    public required int RightHandSide { get; init; }
+
+    public override string ToString() => $"{{{string.Join(", ", Context)}}}: [] ↦ {RightHandSide}";
+
+    public static bool TryParse(Dictionary<string,int> attributesMap, string spec, [NotNullWhen(true)] out ConstantOrderDependency? constantOrderDependency)
     {
         // parse line in format {A, B, C}: [] ↦ E as a ConstantOrderDependency
         var match = ConstantOdRegex().Match(spec);
@@ -16,12 +21,21 @@ public readonly partial record struct ConstantOrderDependency
             return false;
         }
 
-        var context = match.Groups[1].Value.Split(", ").Select(x => new Attribute(x));
-        var rhs = new Attribute(match.Groups[2].Value);
-        constantOrderDependency = new ConstantOrderDependency(new HashSet<Attribute>(context), rhs);
+        var contextIndices = match.Groups[1].Value.Split(", ").Where(x=>!string.IsNullOrWhiteSpace(x)).Select(x => attributesMap[x]);
+        var context = new BitArray(attributesMap.Count);
+        foreach (var contextIndex in contextIndices)
+        {
+            context.Set(contextIndex, true);
+        }
+        var rhs = attributesMap[match.Groups[2].Value];
+        constantOrderDependency = new ConstantOrderDependency
+        {
+            Context = context,
+            RightHandSide = rhs
+        };
         return true;
     }
 
-    [GeneratedRegex("{(.+)}: \\[\\] ↦ (.+)")]
+    [GeneratedRegex("{(.*?)}: \\[\\] ↦ (.+)")]
     private static partial Regex ConstantOdRegex();
 }

@@ -1,29 +1,22 @@
-﻿using DependencyTester.FdMembershipTester;
-using OrderDependencyModels;
-using Attribute = OrderDependencyModels.Attribute;
+﻿using CliFrontend;
 
-// var knownDependencies = ISetBasedOrderDependency.Parse(args[0]);
-// var testDependencies = ListBasedOrderDependency.Parse(args[1]);
-
-var attributes = new List<Attribute>
+args = new[]
 {
-    new("A"),
-    new("B"),
-    new("C"),
+"/Users/paulsieben/HPI/WiSe 2023-2024 Advanced Data Profiling/Example DISTOD Results/horse-sub-results.txt",
+ "/Users/paulsieben/Programming/OrderDependencyTester/testdata/Horse-300-27/invalid_2_2.txt",
+  "/Users/paulsieben/Programming/OrderDependencyTester/testdata/Horse-300-27/attributes.txt"
 };
-var fds = new List<FunctionalDependency>
+
+if (args.Length != 3)
 {
-    new(new HashSet<Attribute>(attributes[0].Yield()), new HashSet<Attribute>(attributes[1].Yield())),
-    new(new HashSet<Attribute>(attributes[1].Yield()), new HashSet<Attribute>(attributes[2].Yield())),
-};
-var fdUnderTest = new FunctionalDependency(new HashSet<Attribute>(attributes[0].Yield()),
-    new HashSet<Attribute>(attributes[2].Yield()));
-
-var isValid = FdMembershipAlgorithm.IsValid(fdUnderTest, fds, attributes);
-
-Console.WriteLine(isValid);
-
-file static class Utils
-{
-    public static IEnumerable<T> Yield<T>(this T item) => new[] { item };
+    Console.Error.WriteLine($"Expected 3 arguments, got {args.Length}.");
+    Console.Error.WriteLine($"Usage: {Environment.GetCommandLineArgs()[0]} [known set based dependency path: string] [list based dependencies to test path: string] [attributes path: string]");
+    return 1;
 }
+
+foreach (var (dependencyToTest, isValid) in TestExecutor.TestDependencies(args[0], args[1], args[2]))
+{
+    Console.WriteLine($"OD {dependencyToTest} is {(isValid ? "" : "not ")}valid");
+}
+
+return 0;
