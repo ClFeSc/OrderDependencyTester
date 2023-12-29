@@ -9,6 +9,7 @@
 
 
     <ItemGroup>
+      <ProjectReference Include="..\BitSets\BitSets.csproj" />
       <ProjectReference Include="..\OrderDependencyModels\OrderDependencyModels.csproj" />
     </ItemGroup>
 

@@ -1,36 +1,36 @@
-using System.Collections;
+using BitSets;
 using DependencyTester.FdMembershipTester;
 using OrderDependencyModels;
 
 namespace DependencyTester.ListBasedOdMembershipTester;
 
-public class ListBasedOdAlgorithm
+public class ListBasedOdAlgorithm<TBitSet> where TBitSet : IBitSet<TBitSet>
 {
-    public required ICollection<ConstantOrderDependency> Constants { private get; init; }
-    public required ColumnsTree<HashSet<OrderCompatibleDependency>> CompatiblesTree { private get; init; }
+    public required ICollection<ConstantOrderDependency<TBitSet>> Constants { private get; init; }
+    public required ColumnsTree<HashSet<OrderCompatibleDependency<TBitSet>>, TBitSet> CompatiblesTree { private get; init; }
     public required int NumberOfAttributes { private get; init; }
-    private FdMembershipAlgorithm? _fdAlgo;
+    private FdMembershipAlgorithm<TBitSet>? _fdAlgo;
 
-    private FdMembershipAlgorithm FdAlgo => _fdAlgo ??=
-        new FdMembershipAlgorithm(Constants.Select(FunctionalDependency.FromConstantOrderDependency).ToArray(),
+    private FdMembershipAlgorithm<TBitSet> FdAlgo => _fdAlgo ??=
+        new FdMembershipAlgorithm<TBitSet>(Constants.Select(FunctionalDependency<TBitSet>.FromConstantOrderDependency).ToArray(),
             NumberOfAttributes);
 
 
     private bool SplitsExist(ListBasedOrderDependency odUnderTest)
     {
-        var fd = new FunctionalDependency
+        var fd = new FunctionalDependency<TBitSet>
         {
             Lhs = BitArrayFrom(odUnderTest.LeftHandSide.Select(orderSpec => orderSpec.Attribute), NumberOfAttributes),
             Rhs = BitArrayFrom(odUnderTest.RightHandSide.Select(orderSpec => orderSpec.Attribute), NumberOfAttributes),
         };
         return !FdAlgo.IsValid(fd);
 
-        static BitArray BitArrayFrom(IEnumerable<int> toSet, int size)
+        static TBitSet BitArrayFrom(IEnumerable<int> toSet, int size)
         {
-            var bitArray = new BitArray(size);
+            var bitArray = TBitSet.Create(size);
             foreach (var indexToSet in toSet)
             {
-                bitArray.Set(indexToSet, true);
+                bitArray.Set(indexToSet);
             }
 
             return bitArray;
@@ -41,32 +41,32 @@ public class ListBasedOdAlgorithm
     {
         // This context is formed from the RHS of the list-based OD.
         // In the inner loop, the LHS attributes are added independently.
-        var contextFromRight = new BitArray(NumberOfAttributes);
+        var contextFromRight = TBitSet.Create(NumberOfAttributes);
 
         foreach (var rightOrderSpec in odUnderTest.RightHandSide)
         {
             var rightAttribute = rightOrderSpec.Attribute;
             // Context for the current iteration, includes the right context.
-            var context = new BitArray(contextFromRight);
+            var context = contextFromRight.Copy();
             // We use Constant ODs, but interpret them as FDs.
-            var fdsToTest = new List<FunctionalDependency>();
-            var fdToOd = new Dictionary<FunctionalDependency, OrderCompatibleDependency>();
+            var fdsToTest = new List<FunctionalDependency<TBitSet>>();
+            var fdToOd = new Dictionary<FunctionalDependency<TBitSet>, OrderCompatibleDependency<TBitSet>>();
 
             foreach (var leftOrderSpec in odUnderTest.LeftHandSide)
             {
                 var leftAttribute = leftOrderSpec.Attribute;
 
-                var correspondingOd = new OrderCompatibleDependency
+                var correspondingOd = new OrderCompatibleDependency<TBitSet>
                 {
-                    Context = new BitArray(context),
+                    Context = context.Copy(),
                     Lhs = leftOrderSpec,
                     Rhs = rightOrderSpec
                 };
                 if (!IsValid(correspondingOd))
                 {
-                    var rhs = new BitArray(NumberOfAttributes);
-                    rhs.Set(leftAttribute, true);
-                    var fdToTest = new FunctionalDependency
+                    var rhs = TBitSet.Create(NumberOfAttributes);
+                    rhs.Set(leftAttribute);
+                    var fdToTest = new FunctionalDependency<TBitSet>
                     {
                         Lhs = correspondingOd.Context,
                         Rhs = rhs,
@@ -76,9 +76,9 @@ public class ListBasedOdAlgorithm
                 }
 
 
-                context.Set(leftAttribute, true);
+                context.Set(leftAttribute);
             }
-            contextFromRight.Set(rightAttribute, true);
+            contextFromRight.Set(rightAttribute);
 
             if (fdsToTest.Count == 0) continue;
 
@@ -100,7 +100,7 @@ public class ListBasedOdAlgorithm
         return false;
     }
 
-    private bool IsValid(OrderCompatibleDependency odCandidate)
+    private bool IsValid(OrderCompatibleDependency<TBitSet> odCandidate)
     {
         // Note: If this becomes a performance problem, we can look into directly implementing the methods used here.
         // 1. Check if LHS == RHS.
@@ -120,7 +120,7 @@ public class ListBasedOdAlgorithm
                // 4. Check if 3. holds for reversed directions.
                HasSupersetByAugmentation(odCandidate.Reverse());
 
-        bool HasSupersetByAugmentation(OrderCompatibleDependency orderCompatibleDependency) =>
+        bool HasSupersetByAugmentation(OrderCompatibleDependency<TBitSet> orderCompatibleDependency) =>
             CompatiblesTree.GetSubsets(orderCompatibleDependency.Context)
                 .Any(set => set.Any(other => orderCompatibleDependency
                     .All(os => other.Contains(os)))

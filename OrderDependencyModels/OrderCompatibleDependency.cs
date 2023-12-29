@@ -1,12 +1,13 @@
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
+using BitSets;
 
 namespace OrderDependencyModels;
 
-public readonly partial record struct OrderCompatibleDependency : IEnumerable<OrderSpecification>, ISetBasedOrderDependency
+public readonly partial record struct OrderCompatibleDependency<TBitSet> : IEnumerable<OrderSpecification>, ISetBasedOrderDependency where TBitSet : IBitSet<TBitSet>
 {
-    public required BitArray Context { get; init; }
+    public required TBitSet Context { get; init; }
     private readonly HashSet<OrderSpecification> _sides;
     public required OrderSpecification Lhs
     {
@@ -33,7 +34,7 @@ public readonly partial record struct OrderCompatibleDependency : IEnumerable<Or
         return $"{{{string.Join(", ", Context)}}}: {sides[0]} ~ {sides[1]}";
     }
 
-    public static bool TryParse(Dictionary<string,int> attributesMap, string spec, [NotNullWhen(true)] out OrderCompatibleDependency? orderCompatibleDependency)
+    public static bool TryParse(Dictionary<string,int> attributesMap, string spec, [NotNullWhen(true)] out OrderCompatibleDependency<TBitSet>? orderCompatibleDependency)
     {
         // parse line in format {D, F, H, I}: B↑ ~ E↓ as a OrderCompatibleDependency
         var match = OrderCompatibleRegex().Match(spec);
@@ -44,15 +45,15 @@ public readonly partial record struct OrderCompatibleDependency : IEnumerable<Or
         }
 
         var splitted = match.Groups[1].Value.Split(", ");
-        var context = new BitArray(attributesMap.Count);
+        var context = TBitSet.Create(attributesMap.Count);
         
         foreach (var attribute in splitted.Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => attributesMap[x]))
         {
-            context.Set(attribute, true);
+            context.Set(attribute);
         }
         var lhs = OrderSpecification.Parse(attributesMap,match.Groups[2].Value);
         var rhs = OrderSpecification.Parse(attributesMap,match.Groups[3].Value);
-        orderCompatibleDependency = new OrderCompatibleDependency
+        orderCompatibleDependency = new OrderCompatibleDependency<TBitSet>
         {
             Context = context,
             Lhs = lhs,
@@ -64,7 +65,7 @@ public readonly partial record struct OrderCompatibleDependency : IEnumerable<Or
     [GeneratedRegex("{(.*?)}: (.+?) ~ (.+)")] 
     private static partial Regex OrderCompatibleRegex();
 
-    public OrderCompatibleDependency Reverse() => this with
+    public OrderCompatibleDependency<TBitSet> Reverse() => this with
     {
         Sides = _sides.Select(os => os.Reverse()),
     };
