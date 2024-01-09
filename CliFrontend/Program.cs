@@ -24,9 +24,8 @@ foreach (var (dependencyToTest, isValid) in TestExecutor.TestDependencies(args[0
     if (isValid)
     {
         validCount++;
-        // Console.WriteLine($"{count} OD {dependencyToTest} is {(isValid ? "" : "not ")}valid");
-
     }
+    Console.WriteLine($"{count} OD {dependencyToTest} is {(isValid ? "" : "not ")}valid");
 }
 sw.Stop();
 Console.WriteLine(sw.Elapsed);
