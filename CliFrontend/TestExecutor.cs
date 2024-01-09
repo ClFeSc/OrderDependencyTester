@@ -30,12 +30,10 @@ public static class TestExecutor
             }
 
 
-            var compatiblesTree = new ColumnsTree<HashSet<OrderCompatibleDependency<TBitSet>>, TBitSet>(Attributes.Count);
+            var compatiblesTree = new ColumnsTree<OrderCompatibleDependency<TBitSet>, TBitSet>(Attributes.Count);
             foreach (var compatibleOd in knownDependencies.startingCompOds)
             {
-                var set = compatiblesTree.Get(compatibleOd.Context) ?? new HashSet<OrderCompatibleDependency<TBitSet>>();
-                set.Add(compatibleOd);
-                compatiblesTree.Add(set, compatibleOd.Context);
+                compatiblesTree.Add(compatibleOd, compatibleOd.Context);
             }
 
             // var algo = new ListBasedOdAlgorithm(knownDependencies.startingCods,compatiblesTree,attributes.Count);
