@@ -1,42 +1,45 @@
 using System.Collections;
+using BitSets;
 using DependencyTester.FdMembershipTester;
 using OrderDependencyModels;
 
 namespace DependencyTesterTest.FdMembershipTester;
 
+using TBitSet = IntegerBitSet<uint>;
+
 public class FdMembershipAlgorithmTest
 {
-    private record FdToTest(FunctionalDependency FunctionalDependency, bool ShouldBeValid);
+    private record FdToTest(FunctionalDependency<TBitSet> FunctionalDependency, bool ShouldBeValid);
 
     private record FdsToTestWithEarlyReturn(List<FdToTest> FdsToTest, int EarlyReturnAttribute);
 
     private static int NumberOfAttributes { get; } = 6;
 
-    private static BitArray BitArraySetAt(HashSet<int> indices)
+    private static TBitSet BitArraySetAt(HashSet<int> indices)
     {
-        var array = new BitArray(NumberOfAttributes);
+        var array = TBitSet.Create(NumberOfAttributes);
         foreach (var index in indices)
-            array.Set(index, true);
+            array.Set(index);
         return array;
     }
 
-    private static HashSet<FunctionalDependency> GroundTruth { get; } = new()
+    private static HashSet<FunctionalDependency<TBitSet>> GroundTruth { get; } = new()
     {
-        new FunctionalDependency(0, 1, NumberOfAttributes),
-        new FunctionalDependency(1, 2, NumberOfAttributes),
-        new FunctionalDependency
+        new FunctionalDependency<TBitSet>(0, 1, NumberOfAttributes),
+        new FunctionalDependency<TBitSet>(1, 2, NumberOfAttributes),
+        new FunctionalDependency<TBitSet>
             {Lhs = BitArraySetAt(new HashSet<int> {0, 2}), Rhs = BitArraySetAt(new HashSet<int> {3})},
-        new FunctionalDependency(1, 5, NumberOfAttributes),
+        new FunctionalDependency<TBitSet>(1, 5, NumberOfAttributes),
     };
 
     public static IEnumerable<object[]> ToTestForIsValid { get; } = new List<FdToTest[]>
     {
-        new [] { new FdToTest(new FunctionalDependency(0, 2, NumberOfAttributes), true) },
-        new [] { new FdToTest(new FunctionalDependency(1, 2, NumberOfAttributes), true) },
-        new [] { new FdToTest(new FunctionalDependency(0, 0, NumberOfAttributes), true) },
-        new [] { new FdToTest(new FunctionalDependency(0, 3, NumberOfAttributes), true) },
-        new [] { new FdToTest(new FunctionalDependency(3, 2, NumberOfAttributes), false) },
-        new [] { new FdToTest(new FunctionalDependency(2, 1, NumberOfAttributes), false) },
+        new [] { new FdToTest(new FunctionalDependency<TBitSet>(0, 2, NumberOfAttributes), true) },
+        new [] { new FdToTest(new FunctionalDependency<TBitSet>(1, 2, NumberOfAttributes), true) },
+        new [] { new FdToTest(new FunctionalDependency<TBitSet>(0, 0, NumberOfAttributes), true) },
+        new [] { new FdToTest(new FunctionalDependency<TBitSet>(0, 3, NumberOfAttributes), true) },
+        new [] { new FdToTest(new FunctionalDependency<TBitSet>(3, 2, NumberOfAttributes), false) },
+        new [] { new FdToTest(new FunctionalDependency<TBitSet>(2, 1, NumberOfAttributes), false) },
     };
 
     private static readonly List<List<FdToTest>[]> ToTestForAreValidTyped = new()
@@ -45,17 +48,17 @@ public class FdMembershipAlgorithmTest
         {
             new List<FdToTest>
             {
-                new(new FunctionalDependency(BitArraySetAt(new HashSet<int>()), BitArraySetAt(new HashSet<int> {0})),
+                new(new FunctionalDependency<TBitSet>(BitArraySetAt(new HashSet<int>()), BitArraySetAt(new HashSet<int> {0})),
                     false),
-                new(new FunctionalDependency(0, 1, NumberOfAttributes), true),
+                new(new FunctionalDependency<TBitSet>(0, 1, NumberOfAttributes), true),
                 new(
-                    new FunctionalDependency(BitArraySetAt(new HashSet<int> {0, 1}),
+                    new FunctionalDependency<TBitSet>(BitArraySetAt(new HashSet<int> {0, 1}),
                         BitArraySetAt(new HashSet<int> {2})), true),
                 new(
-                    new FunctionalDependency(BitArraySetAt(new HashSet<int> {0, 1, 2}),
+                    new FunctionalDependency<TBitSet>(BitArraySetAt(new HashSet<int> {0, 1, 2}),
                         BitArraySetAt(new HashSet<int> {3})), true),
                 new(
-                    new FunctionalDependency(
+                    new FunctionalDependency<TBitSet>(
                         BitArraySetAt(new HashSet<int> {0, 1, 2, 3}),
                         BitArraySetAt(new HashSet<int> {4})), false),
             }
@@ -70,17 +73,17 @@ public class FdMembershipAlgorithmTest
         {
             new FdsToTestWithEarlyReturn(new List<FdToTest>
             {
-                new(new FunctionalDependency(BitArraySetAt(new HashSet<int>()), BitArraySetAt(new HashSet<int> {0})),
+                new(new FunctionalDependency<TBitSet>(BitArraySetAt(new HashSet<int>()), BitArraySetAt(new HashSet<int> {0})),
                     false),
-                new(new FunctionalDependency(0, 1, NumberOfAttributes), true),
+                new(new FunctionalDependency<TBitSet>(0, 1, NumberOfAttributes), true),
                 new(
-                    new FunctionalDependency(BitArraySetAt(new HashSet<int> {0, 1}),
+                    new FunctionalDependency<TBitSet>(BitArraySetAt(new HashSet<int> {0, 1}),
                         BitArraySetAt(new HashSet<int> {2})), true),
                 new(
-                    new FunctionalDependency(BitArraySetAt(new HashSet<int> {0, 1, 2}),
+                    new FunctionalDependency<TBitSet>(BitArraySetAt(new HashSet<int> {0, 1, 2}),
                 BitArraySetAt(new HashSet<int> {3})), true),
                 new(
-                    new FunctionalDependency(
+                    new FunctionalDependency<TBitSet>(
                         BitArraySetAt(new HashSet<int> {0, 1, 2, 3}),
                         BitArraySetAt(new HashSet<int> {4})), true),
 
@@ -92,7 +95,7 @@ public class FdMembershipAlgorithmTest
     [MemberData(nameof(ToTestForIsValid))]
     private void TestIsValid(FdToTest fdToTest)
     {
-        var isValid = new FdMembershipAlgorithm(GroundTruth,6).IsValid(fdToTest.FunctionalDependency);
+        var isValid = new FdMembershipAlgorithm<TBitSet>(GroundTruth,6).IsValid(fdToTest.FunctionalDependency);
         Assert.Equal(fdToTest.ShouldBeValid, isValid);
     }
 
@@ -100,7 +103,7 @@ public class FdMembershipAlgorithmTest
     [MemberData(nameof(ToTestForAreValid))]
     private void TestAreValidWithoutEarlyReturn(List<FdToTest> fdsToTest)
     {
-        var areValid = new FdMembershipAlgorithm(GroundTruth,6).AreValid(fdsToTest.Select(fd => fd.FunctionalDependency).ToArray());
+        var areValid = new FdMembershipAlgorithm<TBitSet>(GroundTruth,6).AreValid(fdsToTest.Select(fd => fd.FunctionalDependency).ToArray());
 
         foreach (var fd in fdsToTest)
         {
@@ -112,7 +115,7 @@ public class FdMembershipAlgorithmTest
     [MemberData(nameof(ToTestForAreValidWithEarlyReturn))]
     private void TestAreValidWithEarlyReturn(FdsToTestWithEarlyReturn fdsToTest)
     {
-        var areValid = new FdMembershipAlgorithm(GroundTruth,6).AreValid(
+        var areValid = new FdMembershipAlgorithm<TBitSet>(GroundTruth,6).AreValid(
             fdsToTest.FdsToTest.Select(fd => fd.FunctionalDependency).ToArray(),
             fdsToTest.EarlyReturnAttribute);
 

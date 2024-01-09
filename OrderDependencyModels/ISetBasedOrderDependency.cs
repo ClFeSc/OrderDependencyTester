@@ -1,21 +1,23 @@
+using BitSets;
+
 namespace OrderDependencyModels;
 
 public interface ISetBasedOrderDependency : IOrderDependency
 {
-    public static (List<ConstantOrderDependency> startingCods, List<OrderCompatibleDependency> startingCompOds) Parse(Dictionary<string, int> attributesMap, string fileName)
+    public static (List<ConstantOrderDependency<TBitSet>> startingCods, List<OrderCompatibleDependency<TBitSet>> startingCompOds) Parse<TBitSet>(Dictionary<string, int> attributesMap, string fileName) where TBitSet : IBitSet<TBitSet>
     {
-        var startingConstOds = new List<ConstantOrderDependency>();
-        var startingCompOds = new List<OrderCompatibleDependency>();
+        var startingConstOds = new List<ConstantOrderDependency<TBitSet>>();
+        var startingCompOds = new List<OrderCompatibleDependency<TBitSet>>();
 
         // read each line of input.txt
         foreach (var line in File.ReadLines(fileName))
         {
-            if (ConstantOrderDependency.TryParse(attributesMap,line, out var constantOrderDependency))
+            if (ConstantOrderDependency<TBitSet>.TryParse(attributesMap,line, out var constantOrderDependency))
             {
                 startingConstOds.Add(constantOrderDependency.Value);
                 continue;
             }
-            else if (OrderCompatibleDependency.TryParse(attributesMap, line, out var orderCompatibleDependency))
+            else if (OrderCompatibleDependency<TBitSet>.TryParse(attributesMap, line, out var orderCompatibleDependency))
             {
                 startingCompOds.Add(orderCompatibleDependency.Value);
             }

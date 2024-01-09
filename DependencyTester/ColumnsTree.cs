@@ -1,4 +1,4 @@
-using System.Collections;
+using BitSets;
 
 namespace DependencyTester;
 
@@ -7,9 +7,10 @@ namespace DependencyTester;
 /// A prefix tree for sets of <see cref="Attribute">Attributes</see>.
 /// </summary>
 /// <typeparam name="T"></typeparam>
-public class ColumnsTree<T>
+/// <typeparam name="TBitSet"></typeparam>
+public class ColumnsTree<T, TBitSet> where TBitSet : IBitSet<TBitSet>
 {
-    private readonly Dictionary<int, ColumnsTree<T>> _children = new();
+    private readonly Dictionary<int, ColumnsTree<T, TBitSet>> _children = new();
     private T? _content;
 
     private int _numAttributes;
@@ -19,12 +20,12 @@ public class ColumnsTree<T>
         _numAttributes = numAttributes;
     }
 
-    public BitArray toBitArray(IEnumerable<int> columns)
+    public TBitSet toBitArray(IEnumerable<int> columns)
     {
-        var result = new BitArray(_numAttributes);
+        var result = TBitSet.Create(_numAttributes);
         foreach (var column in columns)
         {
-            result.Set(column, true);
+            result.Set(column);
         }
         return result;
     }
@@ -46,7 +47,7 @@ public class ColumnsTree<T>
     /// <param name="content">The value to be set.</param>
     /// <param name="columns">The location to store the values at.</param>
     /// </summary>
-    public void Add(T content, BitArray columns)
+    public void Add(T content, TBitSet columns)
     {
         Traverse(columns)._content = content;
     }
@@ -59,22 +60,22 @@ public class ColumnsTree<T>
     /// <returns>
     /// The value stored at <paramref name="columns"/>, or `null` if nothing is there.
     /// </returns>
-    public T? Get(BitArray columns) => Traverse(columns)._content;
+    public T? Get(TBitSet columns) => Traverse(columns)._content;
 
-    private ColumnsTree<T> Traverse(BitArray columns)
+    private ColumnsTree<T, TBitSet> Traverse(TBitSet columns)
     {
         var current = this;
         for (int i = 0; i < columns.Count; i++)
         {
             if (columns[i] == false) continue;
-            current._children.TryAdd(i, new ColumnsTree<T>(_numAttributes));
+            current._children.TryAdd(i, new ColumnsTree<T, TBitSet>(_numAttributes));
             current = current._children[i];
         }
         return current;
     }
     public List<T> GetSubsets(HashSet<int> columns)
     {
-        BitArray columnBits = toBitArray(columns);
+        var columnBits = toBitArray(columns);
         return GetSubsets(columnBits);
     }
 
@@ -82,11 +83,12 @@ public class ColumnsTree<T>
     /// <returns>
     /// All values stored in the tree for a subset of the given <paramref name="columns"/>.
     /// </returns>
-    public List<T> GetSubsets(BitArray columns)
+    public List<T> GetSubsets(TBitSet columns)
     {
-        var result = _children.Where(item => columns.Get(item.Key)).SelectMany((item) => {
-            var childColumns = new BitArray(columns);
-            childColumns.Set(item.Key, false);
+        var result = _children.Where(item => columns.Get(item.Key)).SelectMany((item) =>
+        {
+            var childColumns = columns.Copy();
+            childColumns.Unset(item.Key);
             return _children[item.Key].GetSubsets(childColumns);
         }).ToList();
        
