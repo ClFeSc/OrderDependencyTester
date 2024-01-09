@@ -11,34 +11,13 @@ namespace DependencyTester;
 public class ColumnsTree<T, TBitSet> where TBitSet : IBitSet<TBitSet>
 {
     private readonly Dictionary<int, ColumnsTree<T, TBitSet>> _children = new();
-    private T? _content;
+    private HashSet<T>? _content;
 
     private int _numAttributes;
 
     public ColumnsTree(int numAttributes)
     {
         _numAttributes = numAttributes;
-    }
-
-    public TBitSet toBitArray(IEnumerable<int> columns)
-    {
-        var result = TBitSet.Create(_numAttributes);
-        foreach (var column in columns)
-        {
-            result.Set(column);
-        }
-        return result;
-    }
-
-    /// <summary>
-    /// Adds a value to the tree.
-    ///
-    /// <param name="content">The value to be set.</param>
-    /// <param name="columns">The location to store the values at.</param>
-    /// </summary>
-    public void Add(T content, IEnumerable<int> columns)
-    {
-        Traverse(toBitArray(columns))._content = content;
     }
 
     /// <summary>
@@ -49,18 +28,15 @@ public class ColumnsTree<T, TBitSet> where TBitSet : IBitSet<TBitSet>
     /// </summary>
     public void Add(T content, TBitSet columns)
     {
-        Traverse(columns)._content = content;
+        var node = Traverse(columns);
+        if (node._content == null) node._content = new();
+        node._content.Add(content);
     }
 
     /// <returns>
     /// The value stored at <paramref name="columns"/>, or `null` if nothing is there.
     /// </returns>
-    public T? Get(IEnumerable<int> columns) => Traverse(toBitArray(columns))._content;
-
-    /// <returns>
-    /// The value stored at <paramref name="columns"/>, or `null` if nothing is there.
-    /// </returns>
-    public T? Get(TBitSet columns) => Traverse(columns)._content;
+    public HashSet<T>? Get(TBitSet columns) => Traverse(columns)._content;
 
     private ColumnsTree<T, TBitSet> Traverse(TBitSet columns)
     {
@@ -73,12 +49,6 @@ public class ColumnsTree<T, TBitSet> where TBitSet : IBitSet<TBitSet>
         }
         return current;
     }
-    public List<T> GetSubsets(HashSet<int> columns)
-    {
-        var columnBits = toBitArray(columns);
-        return GetSubsets(columnBits);
-    }
-
 
     /// <returns>
     /// All values stored in the tree for a subset of the given <paramref name="columns"/>.
@@ -91,8 +61,8 @@ public class ColumnsTree<T, TBitSet> where TBitSet : IBitSet<TBitSet>
             childColumns.Unset(item.Key);
             return _children[item.Key].GetSubsets(childColumns);
         }).ToList();
-       
-        if (_content is not null) result.Add(_content);
+
+        if (_content is not null) result.AddRange(_content);
         return result;
     }
 
@@ -102,7 +72,7 @@ public class ColumnsTree<T, TBitSet> where TBitSet : IBitSet<TBitSet>
     public List<T> GetAll()
     {
         var result = _children.SelectMany(pair => pair.Value.GetAll()).ToList();
-        if (_content is not null) result.Add(_content);
+        if (_content is not null) result.AddRange(_content);
         return result;
     }
 }

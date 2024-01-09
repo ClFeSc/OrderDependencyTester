@@ -79,17 +79,17 @@ public class BitSetBenchmark
 
 internal class AlgoWrapper<TBitSet> where TBitSet : IBitSet<TBitSet>
 {
-    public required string SetBasedPath { get; init; } 
-    public required string ListBasedPath { get;  init;}
-    public required string AttributesPath { get;  init;}
-    
+    public required string SetBasedPath { get; init; }
+    public required string ListBasedPath { get; init; }
+    public required string AttributesPath { get; init; }
+
     public ListBasedOdAlgorithm<TBitSet>? Algo { get; private set; }
     public List<ListBasedOrderDependency>? TestDependencies { get; private set; }
     public void Setup()
     {
         var attributes = File.ReadAllLines(AttributesPath).Where(line => !string.IsNullOrWhiteSpace(line))
             .ToList();
-        
+
         var attributesMap = new Dictionary<string, int>(attributes.Count);
         var attributeIndex = 0;
         foreach (var attribute in attributes)
@@ -106,12 +106,10 @@ internal class AlgoWrapper<TBitSet> where TBitSet : IBitSet<TBitSet>
         }
 
 
-        var compatiblesTree = new ColumnsTree<HashSet<OrderCompatibleDependency<TBitSet>>, TBitSet>(attributes.Count);
+        var compatiblesTree = new ColumnsTree<OrderCompatibleDependency<TBitSet>, TBitSet>(attributes.Count);
         foreach (var compatibleOd in knownDependencies.startingCompOds)
         {
-            var set = compatiblesTree.Get(compatibleOd.Context) ?? new HashSet<OrderCompatibleDependency<TBitSet>>();
-            set.Add(compatibleOd);
-            compatiblesTree.Add(set, compatibleOd.Context);
+            compatiblesTree.Add(compatibleOd, compatibleOd.Context);
         }
 
         Algo = new ListBasedOdAlgorithm<TBitSet>
