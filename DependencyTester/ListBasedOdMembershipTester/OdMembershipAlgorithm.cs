@@ -7,7 +7,7 @@ namespace DependencyTester.ListBasedOdMembershipTester;
 public class ListBasedOdAlgorithm<TBitSet> where TBitSet : IBitSet<TBitSet>
 {
     public required ICollection<ConstantOrderDependency<TBitSet>> Constants { private get; init; }
-    public required ColumnsTree<HashSet<OrderCompatibleDependency<TBitSet>>, TBitSet> CompatiblesTree { private get; init; }
+    public required ColumnsTree<OrderCompatibleDependency<TBitSet>, TBitSet> CompatiblesTree { private get; init; }
     public required int NumberOfAttributes { private get; init; }
     private FdMembershipAlgorithm<TBitSet>? _fdAlgo;
 
@@ -122,8 +122,8 @@ public class ListBasedOdAlgorithm<TBitSet> where TBitSet : IBitSet<TBitSet>
 
         bool HasSupersetByAugmentation(OrderCompatibleDependency<TBitSet> orderCompatibleDependency) =>
             CompatiblesTree.GetSubsets(orderCompatibleDependency.Context)
-                .Any(set => set.Any(other => orderCompatibleDependency
-                    .All(os => other.Contains(os)))
+                .Any(other => orderCompatibleDependency
+                    .All(os => other.Contains(os))
                 );
     }
 
