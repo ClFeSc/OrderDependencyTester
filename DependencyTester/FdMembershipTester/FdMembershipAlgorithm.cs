@@ -10,11 +10,14 @@ public class FdMembershipAlgorithm<TBitSet> where TBitSet : IBitSet<TBitSet>
     private readonly List<FunctionalDependency<TBitSet>> _fdsByIndex = new();
     private readonly List<int> _lhsSizes = new();
 
+    private readonly TBitSet _alwaysReachable;
+
     private int NumAttributes { get; init; }
 
     public FdMembershipAlgorithm(IEnumerable<FunctionalDependency<TBitSet>> fds, int numAttributes)
     {
         NumAttributes = numAttributes;
+        _alwaysReachable = TBitSet.Create(numAttributes);
         for (var i = 0; i < NumAttributes; i++)
         {
             _fdsByAttribute[i] = new List<int>();
@@ -25,6 +28,10 @@ public class FdMembershipAlgorithm<TBitSet> where TBitSet : IBitSet<TBitSet>
         {
             _fdsByIndex.Add(fd);
             _lhsSizes.Add(fd.Lhs.PopCount());
+            if (fd.Lhs.PopCount() == 0)
+            {
+                _alwaysReachable |= fd.Rhs;
+            }
             foreach (var columnIndex in fd.Lhs.Ones())
             {
                 _fdsByAttribute[columnIndex].Add(index);
@@ -44,7 +51,7 @@ public class FdMembershipAlgorithm<TBitSet> where TBitSet : IBitSet<TBitSet>
     public Dictionary<FunctionalDependency<TBitSet>, bool> AreValid(IList<FunctionalDependency<TBitSet>> fdsUnderTest,
         int? earlyReturnAttribute = null)
     {
-        var reachableDependants = TBitSet.Create(NumAttributes);
+        var reachableDependants = _alwaysReachable.Copy();
         // var fdsPerAttribute = new Dictionary<Attribute, List<AnnotatedFd>>(allAttributes.Select(attribute =>
         //     new KeyValuePair<Attribute, List<AnnotatedFd>>(attribute, new List<AnnotatedFd>(groundTruth.Count()))));
         var remainingAttributes = new Queue<int>();
@@ -87,6 +94,12 @@ public class FdMembershipAlgorithm<TBitSet> where TBitSet : IBitSet<TBitSet>
 
             var coveredColumns = reachableDependants & fdUnderTest.Rhs;
             result[fdUnderTest] = coveredColumns == fdUnderTest.Rhs;
+            if (earlyReturnAttribute != null && reachableDependants.Get((int)earlyReturnAttribute))
+                return new Dictionary<FunctionalDependency<TBitSet>, bool>(result.Select((pair, idx) =>
+                {
+                    var isValid = idx >= candidateIndex || pair.Value;
+                    return new KeyValuePair<FunctionalDependency<TBitSet>, bool>(pair.Key, isValid);
+                }));
         }
 
         return result;
