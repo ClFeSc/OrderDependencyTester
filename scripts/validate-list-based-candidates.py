@@ -52,7 +52,7 @@ def excel_column_to_number(column_str: str) -> int:
 
 
 def unique_counts(x: pd.Series):
-    return len(set(x))
+    return len(x.unique())
 
 
 def colsToString(cols: Sequence[int], directions: Sequence[bool]):
@@ -63,10 +63,23 @@ def colsToString(cols: Sequence[int], directions: Sequence[bool]):
 class ListBasedDependency():
     def __init__(self, df, lhs, lhsDirection, rhs, rhsDirection) -> None:
         self.df: pd.DataFrame = df
+        self.df = pd.concat([self.df, self.df.isna().add_suffix("_isna")],axis=1)
         self.lhs: list[int] = lhs
         self.lhsDirection: list[bool] = lhsDirection
         self.rhs: list[int] = rhs
         self.rhsDirection: list[bool] = rhsDirection
+
+    # ensure propoer null first sorting by first sorting by _isna columns
+    # returns (columns, direction)
+    def create_sort_args(self, columns, direction):
+        sort_cols = []
+        sort_directions = []
+        for col, dir in zip(columns, direction):
+            sort_cols.append(col + "_isna")
+            sort_directions.append(True)
+            sort_cols.append(col)
+            sort_directions.append(dir)
+        return sort_cols, sort_directions
     
     @staticmethod 
     def parse_attrlist(alist: str | Any):
@@ -84,15 +97,19 @@ class ListBasedDependency():
         lhs, lhsDirections = ListBasedDependency.parse_attrlist(lhs)
         rhs, rhsDirections = ListBasedDependency.parse_attrlist(rhs)
         return ListBasedDependency(df, lhs, lhsDirections, rhs, rhsDirections)
-    
+
     def isValid(self):
-        # no swaps
-        sorted_by_lhs = self.df.sort_values(self.lhs, ascending=self.lhsDirection) # type: ignore
-        sorted_by_rhs = sorted_by_lhs.sort_values(self.rhs, ascending=self.rhsDirection,kind="stable")
-        
         # no splits
-        df_fd_check = self.df.groupby(self.lhs).agg({col: unique_counts for col in self.rhs})
-        return (sorted_by_lhs.index == sorted_by_rhs.index).all() and (df_fd_check == 1).all(axis=None)
+        df_fd_check = self.df.groupby(self.lhs,dropna=False).agg({col: unique_counts for col in self.rhs})
+        if not (df_fd_check == 1).all(axis=None):
+             return False
+        
+        # no swaps
+        lhs, lhsDirection = self.create_sort_args(self.lhs, self.lhsDirection)
+        sorted_by_lhs = self.df.sort_values(lhs, ascending=lhsDirection)
+        rhs, rhsDirection = self.create_sort_args(self.rhs, self.rhsDirection)
+        sorted_by_rhs = sorted_by_lhs.sort_values(rhs, ascending=rhsDirection,kind="stable")
+        return (sorted_by_lhs.index == sorted_by_rhs.index).all()
     
     def __str__(self):
         result = "["
@@ -104,7 +121,7 @@ class ListBasedDependency():
 
 
 def validate_ods(input_path: str, valid_path: str, invalid_path: str, candidate_path: str):
-    df = pd.read_csv(input_path,sep=";",header=None)
+    df = pd.read_csv(input_path,sep=";",header=None,keep_default_na=False, na_values=['', 'null','?'])
     with open(valid_path, 'w') as valid_file:
         with open(invalid_path, 'w') as invalid_file:
             with open(candidate_path, 'r') as candidate_file:
