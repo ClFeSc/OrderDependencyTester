@@ -71,11 +71,11 @@ class ListBasedDependency():
 
     # ensure propoer null first sorting by first sorting by _isna columns
     # returns (columns, direction)
-    def create_sort_args(self, columns, direction):
+    def create_sort_args(self, columns: list[int], direction: list[bool]):
         sort_cols = []
         sort_directions = []
         for col, dir in zip(columns, direction):
-            sort_cols.append(col + "_isna")
+            sort_cols.append(str(col) + "_isna")
             sort_directions.append(True)
             sort_cols.append(col)
             sort_directions.append(dir)
