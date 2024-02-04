@@ -14,6 +14,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitSetsTester", "BitSetsTes
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Benchmarks", "Benchmarks\Benchmarks.csproj", "{D800202E-ED46-4F26-B80A-BBF59B438A4E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrderDependencyBenchmark", "OrderDependencyBenchmark\OrderDependencyBenchmark.csproj", "{E2563381-ED4D-4C24-A7D0-603797BC9D6A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -48,5 +50,9 @@ Global
 		{D800202E-ED46-4F26-B80A-BBF59B438A4E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D800202E-ED46-4F26-B80A-BBF59B438A4E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D800202E-ED46-4F26-B80A-BBF59B438A4E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E2563381-ED4D-4C24-A7D0-603797BC9D6A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E2563381-ED4D-4C24-A7D0-603797BC9D6A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E2563381-ED4D-4C24-A7D0-603797BC9D6A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E2563381-ED4D-4C24-A7D0-603797BC9D6A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
