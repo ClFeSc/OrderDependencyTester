@@ -9,7 +9,7 @@ namespace OrderDependencyBenchmark;
 [MemoryDiagnoser(false)]
 public class CandidateBenchmark<TBitSet> where TBitSet : IBitSet<TBitSet>
 {
-    public const string MagicPath = "./magic.txt";
+    public const string MagicPath = "/tmp/583bf4a8ab0800e72129f69e8556251ec1b187e9-magic.txt";
     public ListBasedOrderDependency Candidate { get; set; }
     public ListBasedOdAlgorithm<TBitSet> Algorithm { get; set; }
 
@@ -17,7 +17,8 @@ public class CandidateBenchmark<TBitSet> where TBitSet : IBitSet<TBitSet>
     public void GlobalSetup()
     {
         var lines = File.ReadAllLines(MagicPath);
-        var basePath = lines[0];
+        Console.WriteLine(string.Join(", ", lines));
+        var basePath = Path.Combine("..", "..", "..", "..", "..", "..", "..", "..", lines[0]);
         var datasetPath = lines[1];
         var candidateString = lines[2];
         var attributesPath = Path.Combine(basePath, "candidates", datasetPath + ".attributes.txt");
