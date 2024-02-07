@@ -7,3 +7,8 @@ riderModule.iml
 .DS_Store
 
 OrderDependencyTester.sln.DotSettings.user
+
+benchmarkdata/*
+!benchmarkdata/datasets.csv
+!benchmarkdata/runs.csv
+!benchmarkdata/measurements.csv
