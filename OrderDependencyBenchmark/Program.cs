@@ -1,24 +1,21 @@
 ﻿using System.Diagnostics;
-using System.Globalization;
-using System.Numerics;
 using System.Runtime.InteropServices;
-using BenchmarkDotNet.Reports;
 using BitSets;
 using DependencyTester;
 using DependencyTester.ListBasedOdMembershipTester;
-using OrderDependencyBenchmark;
 using OrderDependencyModels;
 
-if (args.Length != 3)
+if (args.Length != 4)
 {
-    Console.Error.WriteLine($"Expected 3 argument, got {args.Length}.");
-    Console.Error.WriteLine($"Usage: {Environment.GetCommandLineArgs()[0]} [datasets.csv path: string] [runs.csv path: string] [measurements.csv path: string]");
+    Console.Error.WriteLine($"Expected 4 argument, got {args.Length}.");
+    Console.Error.WriteLine($"Usage: {Environment.GetCommandLineArgs()[0]} [datasets.csv path: string] [runs.csv path: string] [measurements.csv path: string] [iterations: int]");
     return 1;
 }
 
 var datasetsCsvPath = args[0];
 var runsCsvPath = args[1];
 var measurementsCsvPath = args[2];
+var iterations = int.Parse(args[3]);
 if (File.Exists(runsCsvPath) == false)
 {
     File.WriteAllLines(runsCsvPath, ["time,algorithm,machine_name"]);
@@ -28,7 +25,7 @@ var runTime = DateTime.UtcNow;
 File.AppendAllLines(runsCsvPath, [$"{runTime:o},C#-Axioms,{Environment.MachineName}"]);
 if (File.Exists(measurementsCsvPath) == false)
 {
-    File.WriteAllLines(measurementsCsvPath, ["run_time,dataset,od,is_valid,size_lhs,size_rhs,mean_time,min_time,quart25_time,median_time,quart75_time,max_time"]);
+    File.WriteAllLines(measurementsCsvPath, ["run_time,dataset,od,is_valid,size_lhs,size_rhs,mean_time,min_time,quart25_time,median_time,quart75_time,max_time,iterations"]);
 }
 
 // Source: https://stackoverflow.com/a/33796861
@@ -56,9 +53,14 @@ while (!parser.EndOfData)
         NumberOfConstantOds = int.Parse(fields[5]),
     };
     // if (!dataset.Path.Contains("credit/")) continue;
-    Console.WriteLine(dataset);
+    Console.Error.WriteLine(dataset);
     var attributesPath = Path.Combine(Path.GetDirectoryName(datasetsCsvPath)!, "candidates",
         dataset.Path + ".attributes.txt");
+    if (File.Exists(attributesPath) == false)
+    {
+        Console.Error.WriteLine($"Skipping {dataset}; no attributes exist.");
+        continue;
+    }
     var attributes = File.ReadAllLines(attributesPath).Where(line => !string.IsNullOrWhiteSpace(line))
         .ToList();
     var worker = new BenchmarkRunner
@@ -66,12 +68,13 @@ while (!parser.EndOfData)
         Dataset = dataset,
         Attributes = attributes,
         BasePath = Path.GetDirectoryName(datasetsCsvPath)!,
+        IterationCount = iterations,
     };
     var observations = BitSet.WithSufficientWidth(attributes.Count, worker);
     foreach (var (od, (valid, observation)) in observations)
     {
         File.AppendAllLines(measurementsCsvPath, [
-            $"{runTime:o},\"{dataset.Path}\",\"{od}\",{valid},{od.LeftHandSide.Count},{od.RightHandSide.Count},{observation.Mean},{observation.Min},{observation.Quantile25},{observation.Median},{observation.Quantile75},{observation.Max}"
+            $"{runTime:o},\"{dataset.Path}\",\"{od}\",{valid},{od.LeftHandSide.Count},{od.RightHandSide.Count},{observation.Mean},{observation.Min},{observation.Quantile25},{observation.Median},{observation.Quantile75},{observation.Max},{observation.Iterations}"
         ]);
     }
 }
@@ -83,6 +86,7 @@ file class BenchmarkRunner : IBitSetOperation<Dictionary<ListBasedOrderDependenc
     public required Dataset Dataset { get; init; }
     public required List<string> Attributes { get; init; }
     public required string BasePath { get; init; }
+    public required int IterationCount { get; init; }
 
     private string ValidsPath => Path.Combine(BasePath, "candidates", Dataset.Path + ".valids.txt");
     private string InvalidsPath => Path.Combine(BasePath, "candidates", Dataset.Path + ".invalids.txt");
@@ -122,10 +126,9 @@ file class BenchmarkRunner : IBitSetOperation<Dictionary<ListBasedOrderDependenc
             .Where(entry => entry.Item2 is not null).Select(entry => (entry.Item1, entry.Item2!.Value)).ToList();
         var odResults = ods.Select(entry =>
             new KeyValuePair<ListBasedOrderDependency, List<TimeSpan>>(entry.od, new List<TimeSpan>())).ToDictionary();
-        const int iterationCount = 1000;
-        for (var i = 0; i < iterationCount; i++)
+        for (var i = 0; i < IterationCount; i++)
         {
-            Console.Error.WriteLine($"Iteration {i} of {iterationCount}");
+            Console.Error.WriteLine($"Iteration {i} of {IterationCount}");
             // Shuffle ODs
             Random.Shared.Shuffle(CollectionsMarshal.AsSpan(ods));
             // Run each OD
@@ -165,6 +168,7 @@ file record Observation
     public required TimeSpan Median { get; init; }
     public required TimeSpan Quantile75 { get; init; }
     public required TimeSpan Max { get; init; }
+    public required int Iterations { get; init; }
 
     public static Observation FromResults(IEnumerable<TimeSpan> results)
     {
@@ -184,14 +188,7 @@ file record Observation
             Min = min,
             Quantile25 = quantile25,
             Quantile75 = quantile75,
+            Iterations = list.Count,
         };
     }
-}
-
-file static class Extension
-{
-    public static double GetMeanTime(this Summary summary) => summary.Reports.Single().ResultStatistics!.Mean;
-    public static double GetStdErrorTime(this Summary summary) => summary.Reports.Single().ResultStatistics!.StandardError;
-    public static double GetStdDevTime(this Summary summary) => summary.Reports.Single().ResultStatistics!.StandardDeviation;
-    public static long GetAllocatedMemory(this Summary summary) => summary.Reports.Single().GcStats.GetTotalAllocatedBytes(false)!.Value;
 }
