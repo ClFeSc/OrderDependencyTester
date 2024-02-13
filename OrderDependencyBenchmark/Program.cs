@@ -80,7 +80,7 @@ while (!parser.EndOfData)
     foreach (var (od, (valid, observation)) in observations)
     {
         File.AppendAllLines(measurementsCsvPath, observation.Times.Select((time, index) => $"{runTime:o},\"{dataset.Path}\",\"{od}\",{time},{index}"));
-        File.AppendAllLines(odsCsvPath, [$"{runTime:o},\"{dataset.Path}\",\"{od}\",{valid},{od.LeftHandSide.Count},{od.RightHandSide.Count}"]);
+        File.AppendAllLines(odsCsvPath, [$"\"{dataset.Path}\",{runTime:o},\"{od}\",{valid},{od.LeftHandSide.Count},{od.RightHandSide.Count}"]);
     }
 }
 
