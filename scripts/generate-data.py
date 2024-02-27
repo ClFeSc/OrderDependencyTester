@@ -23,8 +23,12 @@ def generate_argparse() -> argparse.ArgumentParser:
 def main():
     args = generate_argparse().parse_args()
     output_path = args.output_file
-    seed = args.seed
+    seed: int | None = args.seed
     # Seed
+    if seed is None:
+        random.seed(seed)
+        seed = int.from_bytes(random.randbytes(8), 'little')
+    print(f'Used seed: {seed}')
     random.seed(seed)
     with open(output_path, mode = 'w') as file:
         for i in range(4):

@@ -1,5 +1,5 @@
 import argparse
-import os
+import subprocess
 
 
 def generate_argparse() -> argparse.ArgumentParser:
@@ -35,15 +35,19 @@ def main():
     args = generate_argparse().parse_args()
     set_based, invalid, valid, attributes = args.set_based_path, args.invalid_path, args.valid_path, args.attributes_path
     # Test valids
-    command = f'dotnet run -c Release --project CliFrontend {set_based} {valid} {attributes} | grep "is not valid"'
-    result = os.system(command)
-    if os.WEXITSTATUS(result) == 0:
-        raise ValueError("Found at least one valid candidate that was reported as invalid!")
+    command = f'dotnet run -c Release --project CliFrontend {set_based} {valid} {attributes}'
+    result = subprocess.check_output(command, shell=True)
+    total_tested = int(result.splitlines()[-2].decode().split(': ')[-1])
+    total_valid = int(result.splitlines()[-1].decode().split(': ')[-1])
+    if total_valid != total_tested:
+        raise ValueError(f"{total_valid} of {total_tested} ODs were valid, expected {total_tested}.")
     # Test invalids
-    command = f'dotnet run -c Release --project CliFrontend {set_based} {invalid} {attributes} | grep -v "is not valid"'
-    result = os.system(command)
-    if os.WEXITSTATUS(result) == 0:
-        raise ValueError("Found at least one invalid candidate that was reported as valid!")
+    command = f'dotnet run -c Release --project CliFrontend {set_based} {invalid} {attributes}'
+    result = subprocess.check_output(command, shell=True)
+    total_tested = int(result.splitlines()[-2].decode().split(': ')[-1])
+    total_valid = int(result.splitlines()[-1].decode().split(': ')[-1])
+    if total_valid > 0:
+        raise ValueError(f"{total_valid} of {total_tested} ODs were valid, expected 0.")
 
 
 if __name__ == '__main__':
