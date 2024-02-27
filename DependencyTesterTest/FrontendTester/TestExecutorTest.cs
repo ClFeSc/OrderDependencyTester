@@ -18,6 +18,8 @@ public class TestExecutorTest
         // However, it can be used to check that the algorithm did not change.
         new object[] { "../../../../testdata/minimal1/ground-truth.csv", "../../../../testdata/minimal1/to-test-valid.unique.txt", "../../../../testdata/minimal1/attributes.txt", true },
         new object[] { "../../../../testdata/minimal1/ground-truth.csv", "../../../../testdata/minimal1/to-test-invalid.unique.txt", "../../../../testdata/minimal1/attributes.txt", false },
+        // Regression test for empty context.
+        new object[] { "../../../../testdata/minimal3/ground-truth.csv", "../../../../testdata/minimal3/to-test-valid.unique.txt", "../../../../testdata/minimal3/attributes.txt", true },
     };
     
     [Theory]
