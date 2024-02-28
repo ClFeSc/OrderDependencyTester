@@ -12,6 +12,14 @@ if (args.Length != 5)
     return 1;
 }
 
+#if DEBUG
+Console.Error.WriteLine("Tried to run benchmark in debug mode. Aborting.");
+return 2;
+#endif
+
+Console.Error.WriteLine($"Waiting for user input to proceed. PID: {Environment.ProcessId}");
+Console.ReadLine();
+
 var datasetsCsvPath = args[0];
 var runsCsvPath = args[1];
 var measurementsCsvPath = args[2];
@@ -58,7 +66,11 @@ while (!parser.EndOfData)
         NumberOfCompatibleOds = int.Parse(fields[4]),
         NumberOfConstantOds = int.Parse(fields[5]),
     };
-    // if (!dataset.Path.Contains("credit/")) continue;
+    if (dataset.Path.Contains("tournament/tourney_detailed_results.csv"))
+    {
+        Console.Error.WriteLine($"Skipping {dataset} due to excessive runtime.");
+        continue;
+    }
     Console.Error.WriteLine(dataset);
     var attributesPath = Path.Combine(Path.GetDirectoryName(datasetsCsvPath)!, "candidates",
         dataset.Path + ".attributes.txt");
@@ -131,10 +143,11 @@ file class BenchmarkRunner : IBitSetOperation<Dictionary<ListBasedOrderDependenc
             .Where(entry => entry.Item2 is not null).Select(entry => (entry.Item1, entry.Item2!.Value)).ToList();
         var odResults = ods.Select(entry =>
             new KeyValuePair<ListBasedOrderDependency, List<TimeSpan>>(entry.od, new List<TimeSpan>())).ToDictionary();
+        Console.Error.WriteLine($"Number of candidates: {ods.Count}.");
         var startTime = DateTime.UtcNow;
         for (var i = 0; i < MaximalIterations; i++)
         {
-            if (DateTime.UtcNow - startTime > TimeSpan.FromMinutes(1))
+            if (DateTime.UtcNow - startTime > TimeSpan.FromMinutes(10))
             {
                 Console.Error.WriteLine($"Timeout on {Dataset.Path}");
                 break;
@@ -146,6 +159,7 @@ file class BenchmarkRunner : IBitSetOperation<Dictionary<ListBasedOrderDependenc
             // Run each OD
             foreach (var (_, od) in ods)
             {
+                CollectGarbage();
                 var sw = new Stopwatch();
                 sw.Start();
                 algo.IsValid(od);
@@ -158,7 +172,19 @@ file class BenchmarkRunner : IBitSetOperation<Dictionary<ListBasedOrderDependenc
             new KeyValuePair<ListBasedOrderDependency, (bool valid, Observation observation)>(entry.od,
                 (entry.valid, Observation.FromResults(odResults[entry.od])))).ToDictionary();
 
+        Console.Error.WriteLine($"GC took {_gcTime}.");
         return result;
+    }
+
+    private TimeSpan _gcTime = TimeSpan.Zero;
+    private void CollectGarbage()
+    {
+        var sw = new Stopwatch();
+        sw.Start();
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        sw.Stop();
+        _gcTime += sw.Elapsed;
     }
 }
 
