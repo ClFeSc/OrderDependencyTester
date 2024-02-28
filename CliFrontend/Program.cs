@@ -3,11 +3,10 @@ using CliFrontend;
 
 // args = new[]
 // {
-// "/Users/paulsieben/HPI/WiSe 2023-2024 Advanced Data Profiling/Example DISTOD Results/horse-sub-results.txt",
-//  "/Users/paulsieben/Programming/OrderDependencyTester/testdata/Horse-300-27/invalid_2_2.txt",
-//   "/Users/paulsieben/Programming/OrderDependencyTester/testdata/Horse-300-27/attributes.txt"
-// };
-
+//      "/Users/paulsieben/HPI/WiSe 2023-2024 Advanced Data Profiling/Example Data and ODs/results/credit/category.csv.txt",
+//      "/Users/paulsieben/Programming/OrderDependencyTester/testdata/candidates/credit/category.csv.invalids.txt",
+//      "/Users/paulsieben/Programming/OrderDependencyTester/testdata/candidates/credit/category.csv.attributes.txt"
+//  };
 if (args.Length != 3)
 {
     Console.Error.WriteLine($"Expected 3 arguments, got {args.Length}.");
@@ -18,13 +17,21 @@ if (args.Length != 3)
 var sw = new Stopwatch();
 sw.Start();
 var count = 0;
+var validCount = 0;
 foreach (var (dependencyToTest, isValid) in TestExecutor.TestDependencies(args[0], args[1], args[2]))
 {
     count++;
-    // Console.WriteLine($"OD {dependencyToTest} is {(isValid ? "" : "not ")}valid");
+    if (isValid)
+    {
+        validCount++;
+        // Console.WriteLine($"{count} OD {dependencyToTest} is {(isValid ? "" : "not ")}valid");
+
+    }
 }
 sw.Stop();
 Console.WriteLine(sw.Elapsed);
-Console.WriteLine(count);
+Console.WriteLine("Total count: " + count);
+Console.WriteLine("Valid count: " + validCount);
+
 
 return 0;

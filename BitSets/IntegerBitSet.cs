@@ -85,4 +85,14 @@ public class IntegerBitSet<TBase> : IBitSet<IntegerBitSet<TBase>>, IEquatable<In
                 Unset(index);
         }
     }
+
+    public override string ToString()
+    {
+        string result = "[";
+        for (int i = 0; i < Count; i++)
+        {
+            result += (Get(i) ? '1' : '0') + ", ";
+        }
+        return result + "]";
+    }
 }
