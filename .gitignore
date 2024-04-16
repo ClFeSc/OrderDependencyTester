@@ -8,3 +8,8 @@ riderModule.iml
 
 candidates
 OrderDependencyTester.sln.DotSettings.user
+
+# Scripts in CI
+scripts/venv
+testdata/ci/*
+!testdata/ci/attributes.txt
