@@ -9,25 +9,25 @@ public readonly partial record struct ListBasedOrderDependency : IListBasedOrder
 
     public override string ToString() => $"[{string.Join(",", LeftHandSide)}] -> [{string.Join(",", RightHandSide)}]";
 
-    public static List<ListBasedOrderDependency> Parse(Dictionary<string, int > attributesMap, string filename)
+    public static ListBasedOrderDependency? Parse(Dictionary<string, int> attributesMap, string representation)
     {
-        var ParseOrderSpec = (string x) => OrderSpecification.Parse(attributesMap,x);
-
-        var list = new List<ListBasedOrderDependency>();
-        foreach (var line in File.ReadAllLines(filename))
+        var parseOrderSpec = (string x) => OrderSpecification.Parse(attributesMap, x);
+        var match = ListBasedOdRegex().Match(representation);
+        if (!match.Success) return null;
+        var lhs = match.Groups[1].Value.Split(",").Select(parseOrderSpec).ToList();
+        var rhs = match.Groups[2].Value.Split(",").Select(parseOrderSpec).ToList();
+        return new ListBasedOrderDependency
         {
-            var match = ListBasedOdRegex().Match(line);
-            if (!match.Success) continue;
-            var lhs = match.Groups[1].Value.Split(",").Select(ParseOrderSpec).ToList();
-            var rhs = match.Groups[2].Value.Split(",").Select(ParseOrderSpec).ToList();
-            list.Add(new ListBasedOrderDependency
-            {
-                LeftHandSide = lhs,
-                RightHandSide = rhs,
-            });
-        }
-        return list;
+            LeftHandSide = lhs,
+            RightHandSide = rhs,
+        };
     }
+
+    public static IEnumerable<ListBasedOrderDependency>
+        ParseFromFile(Dictionary<string, int> attributesMap, string filename) => File.ReadAllLines(filename)
+        .Select(line => Parse(attributesMap, line))
+        .Where(od => od is not null)
+        .Select(od => od!.Value);
 
     [GeneratedRegex(@"\[(.+)\] -> \[(.+)\]")]
     private static partial Regex ListBasedOdRegex();

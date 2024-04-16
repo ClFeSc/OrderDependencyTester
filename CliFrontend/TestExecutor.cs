@@ -22,7 +22,7 @@ public static class TestExecutor
             }
 
             var knownDependencies = ISetBasedOrderDependency.Parse<TBitSet>(attributesMap, SetBasedPath);
-            var testDependencies = ListBasedOrderDependency.Parse(attributesMap, ListBasedPath);
+            var testDependencies = ListBasedOrderDependency.ParseFromFile(attributesMap, ListBasedPath).ToList();
 
             if (testDependencies.Count == 0)
             {

@@ -98,7 +98,7 @@ internal class AlgoWrapper<TBitSet> where TBitSet : IBitSet<TBitSet>
         }
 
         var knownDependencies = ISetBasedOrderDependency.Parse<TBitSet>(attributesMap, SetBasedPath);
-        TestDependencies = ListBasedOrderDependency.Parse(attributesMap, ListBasedPath);
+        TestDependencies = ListBasedOrderDependency.ParseFromFile(attributesMap, ListBasedPath).ToList();
 
         if (TestDependencies.Count == 0)
         {

@@ -127,7 +127,7 @@ public class ListBasedOdAlgorithm<TBitSet> where TBitSet : IBitSet<TBitSet>
                 );
     }
 
-    private bool IsValid(ListBasedOrderDependency odUnderTest)
+    public bool IsValid(ListBasedOrderDependency odUnderTest)
     {
         if (SwapsExist(odUnderTest))
             return false;
