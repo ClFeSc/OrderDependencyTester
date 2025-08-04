@@ -1,6 +1,6 @@
 # OrderDependencyTester
 
-This project provides a C# implementation of an algorithm determining whether [Order Dependencies (ODs)](https://hpi.de/fileadmin/user_upload/fachgebiete/naumann/publications/PDFs/2022_schmidl_efficient.pdf) hold, given a Ground Truth set of known-good ODs.
+This project provides a C# implementation of an algorithm determining whether list-based [Order Dependencies (ODs)](https://hpi.de/fileadmin/user_upload/fachgebiete/naumann/publications/PDFs/2022_schmidl_efficient.pdf) hold, given a Ground Truth set of known-good set-based ODs.
 
 ## Setup
 
